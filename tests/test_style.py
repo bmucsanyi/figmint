@@ -157,7 +157,12 @@ def test_default_theme_is_publication_style() -> None:
     assert value(config, "axes.prop_cycle").by_key()["color"] == list(
         REPAIRED_LATTE_CYCLE,
     )
-    assert value(config, "font.size") == pytest.approx(8.0)
+    assert value(config, "font.size") == pytest.approx(9.0)
+    assert value(config, "axes.labelsize") == pytest.approx(9.0)
+    assert value(config, "axes.titlesize") == pytest.approx(9.0)
+    assert value(config, "legend.fontsize") == pytest.approx(8.0)
+    assert value(config, "xtick.labelsize") == pytest.approx(8.0)
+    assert value(config, "ytick.labelsize") == pytest.approx(8.0)
 
 
 @pytest.mark.parametrize(
@@ -353,8 +358,8 @@ def test_venue_layout_defaults_match_publication_layout() -> None:
 @pytest.mark.parametrize(
     ("venue", "column", "expected_width", "expected_font_size"),
     [
-        ("icml", "half", 3.25, 8.0),
-        ("icml", "full", 6.75, 8.0),
+        ("icml", "half", 3.25, 9.0),
+        ("icml", "full", 6.75, 9.0),
         ("iclr", "full", 5.5, 9.0),
         ("neurips", "full", 5.5, 9.0),
     ],
@@ -372,6 +377,11 @@ def test_conference_defaults_apply_without_size_overrides(
 
     assert value(config, "font.size") == expected_font_size
     assert value(config, "font.family") == "Times New Roman"
+    assert value(config, "axes.labelsize") == pytest.approx(expected_font_size)
+    assert value(config, "axes.titlesize") == pytest.approx(expected_font_size)
+    assert value(config, "legend.fontsize") == pytest.approx(expected_font_size - 1.0)
+    assert value(config, "xtick.labelsize") == pytest.approx(expected_font_size - 1.0)
+    assert value(config, "ytick.labelsize") == pytest.approx(expected_font_size - 1.0)
     assert figure_size[0] == expected_width
     assert figure_size[1] == pytest.approx(expected_width * golden_ratio)
 

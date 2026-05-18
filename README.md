@@ -129,7 +129,7 @@ The Catppuccin colors used by the themed styles are official palette values. Eac
 
 ## Venue Presets
 
-Venue presets set the default figure size, font size, and font for paper figures. ICML uses `8 pt`; ICLR and NeurIPS use `9 pt`. All supported venue presets default to `Times New Roman`. `font`, `font_weight`, `font_size`, and `figure_size` are overrides; omit them to use the venue preset. To make a talk version, change the theme and override the font and size fields when needed. If Matplotlib cannot already see the target font, call `register_fonts(...)` once before rendering.
+Venue presets set the default figure size, font size, and font for paper figures. All supported paper venues use `9 pt` primary figure text and `8 pt` secondary figure text for tick labels and legends. All supported venue presets default to `Times New Roman`. `font`, `font_weight`, `font_size`, and `figure_size` are overrides; omit them to use the venue preset. To make a talk version, change the theme and override the font and size fields when needed. If Matplotlib cannot already see the target font, call `register_fonts(...)` once before rendering.
 
 Choose one of:
 

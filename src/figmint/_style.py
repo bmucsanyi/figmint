@@ -17,7 +17,7 @@ VENUES = ("iclr", "neurips", "icml")
 VENUE_FONT_SIZES = {
     "iclr": 9.0,
     "neurips": 9.0,
-    "icml": 8.0,
+    "icml": 9.0,
 }
 
 VENUE_FONTS = {
@@ -406,7 +406,7 @@ def _latex_preamble(*, venue: str) -> str:
 
 
 def _font_size_config(*, font_size: float) -> dict[str, object]:
-    small_size = font_size - 2.0
+    small_size = font_size - 1.0
 
     return {
         "font.size": font_size,
