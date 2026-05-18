@@ -96,6 +96,7 @@ def style(
         **_font_size_config(
             font_size=_resolve_font_size(venue=venue, font_size=font_size),
         ),
+        **_export_config(),
         **_line_config(line_width=line_width),
         **_theme_config(theme=theme, grid_alpha=grid_alpha),
     }
@@ -324,6 +325,14 @@ def _figure_size_config(*, figure_size: tuple[float, float]) -> dict[str, object
         "figure.constrained_layout.use": True,
         "figure.autolayout": False,
         "savefig.pad_inches": PAD_INCHES,
+    }
+
+
+def _export_config() -> dict[str, object]:
+    return {
+        "pdf.fonttype": 42,
+        "ps.fonttype": 42,
+        "svg.fonttype": "none",
     }
 
 

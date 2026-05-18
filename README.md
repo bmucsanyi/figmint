@@ -106,26 +106,34 @@ Supported themes are:
 - `macchiato`
 - `mocha`
 
-`normal` uses a white background, black text, black edges, a repaired Catppuccin Latte categorical cycle, and Matplotlib's built-in `plasma` colormap for scalar data. Paper figures also use framed legends and a low-alpha default grid. The normal categorical cycle keeps the Latte ordering and changes the fewest possible entries needed to meet the white-background contrast and CVD-separation checks used for the package.
+`normal` uses a white background, black text, black edges, a repaired Catppuccin Latte categorical cycle, and Matplotlib's built-in `plasma` colormap for scalar data. Paper figures also use framed legends and a low-alpha default grid. The normal categorical cycle keeps the Latte ordering and treats the cycle order as a priority list: earlier colors move only when the constraints force them to move, while later colors absorb more of the repair.
 
 ### Normal Color Cycle
 
-The `normal` color cycle is a constrained repair of the Catppuccin Latte cycle to adhere to academic plotting best practices. We chose the Catppuccin Latte cycle as the initialization because we love it wholeheartedly.
+The `normal` color cycle is a constrained repair of the Catppuccin Latte cycle for white-background academic figures. The Catppuccin Latte cycle is the starting point and the repaired cycle stays in the same order.
 
-Let $p_i$ be the original Latte color at cycle index $i$ and $c_i$ be the repaired color at the same index. We ran a finite, quantized sRGB search problem on 8-bit colors. The objective was lexicographic: $$\operatorname{lexmin}_{c_1,\ldots,c_n}\left(\sum_i \mathbf{1}[c_i \ne p_i], \sum_i d_{\mathrm{OKLab}}(c_i,p_i)^2\right)$$
+Let $p_i$ be the original Latte color at cycle index $i$ and $c_i$ be the repaired color at the same index. Colors live on the 8-bit sRGB grid, so each channel is an integer in $\{0,\ldots,255\}$. The first objective is to maximize the unchanged prefix length $k(c)=\max\{r:c_i=p_i\text{ for every }i<r\}$. Among palettes with maximal $k$, the second objective is lexicographic movement by cycle position: $$\operatorname{lexmin}_{c_0,\ldots,c_{n-1}}\left(\Delta E_{00}(c_k,p_k)^2,\Delta E_{00}(c_{k+1},p_{k+1})^2,\ldots,\Delta E_{00}(c_{n-1},p_{n-1})^2\right)$$
 
 The constraints were:
 
 - fixed ordering: color $c_i$ stays at Latte cycle position $i$;
 - exact preservation when possible: $c_i=p_i$ unless moving it is needed for a constraint;
-- white-background contrast: $C(c_i,\mathrm{white}) \ge 3.0$ for every repaired color;
-- color-vision separation: $\Delta_m(c_i,c_j) \ge \tau$ for every distinct pair $i \ne j$ and every simulated mode $m$ in the protan, deutan, and tritan family.
+- white-background contrast: $C(c_i,\mathrm{white}) \ge 3.0$ for every repaired color, using WCAG relative-luminance contrast;
+- categorical separation: $D(c_i,c_j) \ge 10$ for every distinct pair $i \neq j$.
 
-The first objective counts how many Latte entries moved. The second objective keeps the moved colors close to their original Latte colors. This makes the intervention minimal in the useful sense: keep the Catppuccin identity and ordering, then move only the entries that must move, then move them as little as possible.
+The pairwise distance is the smallest CIEDE2000 distance over normal vision and three simulated color-vision modes: $$D(c_i,c_j)=\min_{m \in \{\mathrm{normal},\mathrm{protan},\mathrm{deutan},\mathrm{tritan}\}}\Delta E_{00}(S_m(c_i),S_m(c_j))$$
 
-Gray-scale separation is deliberately excluded from the constraints. The target medium is digital color academic figures, and in 2026 that is the main reading path. A gray-scale constraint forces the palette to spend contrast budget on luminance ordering, which fights the color-vision constraints and makes the colors worse for the actual default use case. For black-and-white output, the right mechanism is redundant encoding: markers, line styles, hatches, direct labels, or separate figure variants.
+Here $S_m$ is the identity transform for normal vision and a severity-100 linear-RGB color-vision simulation for the other modes, clipped back into displayable sRGB before converting to CIELAB. The threshold $10$ is the default categorical color-blind-friendly `min_dist` bar used by `cols4all`.
 
-The Catppuccin colors used by the themed styles are official palette values. Each themed style sets both the line/bar color cycle and a sequential Matplotlib colormap built from the theme background, main accent, and text colors. Dark themes set the axes, figure, and saved-output background to the theme base color, so exported plots can be imported into matching slide decks without a white rectangle.
+The objective encodes the usual use pattern of a color cycle. The first few colors appear most often, so they get first claim on staying close to Catppuccin Latte. Later colors are still constrained by contrast and color-vision separation, but they are allowed to move more when that protects earlier entries.
+
+The one-time computation used the constraints above as an 8-bit sRGB constrained search and ranked feasible candidates by the objective above. The original `peach` fails the white-background contrast threshold, so the longest feasible unchanged prefix is one color. The shipped `normal` cycle keeps `blue` exactly, repairs `peach` first, and lets later entries carry the remaining pairwise-separation requirements. The test suite verifies the constraints above and checks the unchanged-prefix bound.
+
+Grayscale separation is deliberately excluded from the constraints. The target medium is digital color academic figures, and in 2026 that is the main reading path. A grayscale constraint forces the palette to spend contrast budget on luminance ordering, which fights the color-vision constraints and makes the colors worse for the actual default use case. For black-and-white output, the right mechanism is redundant encoding: markers, line styles, hatches, direct labels, or separate figure variants.
+
+The separation criterion follows the categorical `min_dist` check in [`cols4all`](https://cols4all.github.io/cols4all-R/articles/01_paper.html). The white-background contrast constraint follows the [WCAG non-text contrast](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html) threshold for graphical objects. The broader goals follow scientific-colormap guidance from [Crameri et al.](https://www.nature.com/articles/s41467-020-19160-7): perceptual separation, color-vision robustness, and readable scientific figures.
+
+The formal repair above applies only to `normal`. The Catppuccin colors used by the themed styles are official palette values. Each themed style sets both the line/bar color cycle and a sequential Matplotlib colormap built from the theme background, main accent, and text colors. Dark themes set the axes, figure, and saved-output background to the theme base color, so exported plots can be imported into matching slide decks without a white rectangle.
 
 ## Venue Presets
 
