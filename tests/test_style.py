@@ -141,7 +141,9 @@ def test_theme_backgrounds_and_text(
     assert value(config, "xtick.labelcolor") == text
     assert value(config, "ytick.labelcolor") == text
     assert value(config, "grid.color") == edge
+    assert value(config, "axes.grid") is True
     assert value(config, "legend.edgecolor") == edge
+    assert value(config, "legend.framealpha") == pytest.approx(1.0)
     assert value(config, "patch.edgecolor") == edge
     assert value(config, "image.cmap") == f"figmint_{theme}"
     assert value(config, "savefig.transparent") is False

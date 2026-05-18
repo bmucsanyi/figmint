@@ -26,6 +26,31 @@ VENUE_FONTS = {
     "icml": "Times New Roman",
 }
 
+BACKGROUND_COLOR_PARAMS = (
+    "axes.facecolor",
+    "figure.facecolor",
+    "figure.edgecolor",
+    "savefig.facecolor",
+    "savefig.edgecolor",
+    "legend.facecolor",
+)
+TEXT_COLOR_PARAMS = (
+    "text.color",
+    "axes.labelcolor",
+    "axes.titlecolor",
+    "xtick.labelcolor",
+    "ytick.labelcolor",
+    "legend.labelcolor",
+)
+EDGE_COLOR_PARAMS = (
+    "axes.edgecolor",
+    "xtick.color",
+    "ytick.color",
+    "grid.color",
+    "legend.edgecolor",
+    "patch.edgecolor",
+)
+
 
 def style(
     theme: str = "normal",
@@ -45,9 +70,8 @@ def style(
     height_to_width_ratio: float = GOLDEN_RATIO,
 ) -> dict[str, object]:
     """Return rcParams for publication figures and themed variants."""
-    return _compose(
-        theme=theme,
-        layout=_layout(
+    return {
+        **_layout(
             venue=venue,
             column=column,
             width_fraction=width_fraction,
@@ -56,16 +80,18 @@ def style(
             figure_size=figure_size,
             height_to_width_ratio=height_to_width_ratio,
         ),
-        fonts=_font(
+        **_font(
             venue=venue,
             usetex=usetex,
             font=_resolve_font(venue=venue, font=font),
             font_weight=font_weight,
         ),
-        font_size=_resolve_font_size(venue=venue, font_size=font_size),
-        line_width=line_width,
-        grid_alpha=grid_alpha,
-    )
+        **_font_size_config(
+            font_size=_resolve_font_size(venue=venue, font_size=font_size),
+        ),
+        **_line_config(line_width=line_width),
+        **_theme_config(theme=theme, grid_alpha=grid_alpha),
+    }
 
 
 def register_fonts(*font_files: str | Path) -> None:
@@ -84,65 +110,32 @@ def register_fonts(*font_files: str | Path) -> None:
         mpl_font_manager.fontManager.addfont(path)
 
 
-def _compose(
-    *,
-    theme: str,
-    layout: dict[str, object],
-    fonts: dict[str, object],
-    font_size: float,
-    line_width: float,
-    grid_alpha: float,
-) -> dict[str, object]:
-    return {
-        **layout,
-        **fonts,
-        **_font_size_config(font_size=font_size),
-        **_line_config(line_width=line_width),
-        **_theme_config(theme=theme, grid_alpha=grid_alpha),
-    }
-
-
 def _theme_config(
     *,
     theme: str,
     grid_alpha: float,
 ) -> dict[str, object]:
-    key = theme
-
-    if key not in THEMES:
+    if theme not in THEMES:
         msg = f"Unknown theme {theme!r}. Expected one of {THEMES!r}."
         raise ValueError(msg)
 
-    colors = COLOR_THEMES[key]
-    _register_colormap(theme=key, colors=colors["colormap"])
+    colors = COLOR_THEMES[theme]
+    _register_colormap(theme=theme, colors=colors["colormap"])
     background = colors["background"]
     edge = colors["edge"]
     text = colors["text"]
 
     return {
+        **dict.fromkeys(BACKGROUND_COLOR_PARAMS, background),
+        **dict.fromkeys(TEXT_COLOR_PARAMS, text),
+        **dict.fromkeys(EDGE_COLOR_PARAMS, edge),
         "axes.prop_cycle": cycler(color=colors["cycle"]),
-        "text.color": text,
-        "axes.edgecolor": edge,
-        "axes.labelcolor": text,
-        "axes.titlecolor": text,
-        "xtick.color": edge,
-        "ytick.color": edge,
-        "xtick.labelcolor": text,
-        "ytick.labelcolor": text,
-        "grid.color": edge,
+        "axes.grid": True,
         "grid.alpha": grid_alpha,
         "grid.linestyle": "solid",
-        "axes.facecolor": background,
-        "figure.facecolor": background,
-        "figure.edgecolor": background,
-        "savefig.facecolor": background,
-        "savefig.edgecolor": background,
+        "legend.framealpha": 1.0,
         "savefig.transparent": False,
-        "legend.labelcolor": text,
-        "legend.facecolor": background,
-        "legend.edgecolor": edge,
-        "image.cmap": _colormap_name(theme=key),
-        "patch.edgecolor": edge,
+        "image.cmap": _colormap_name(theme=theme),
     }
 
 
@@ -173,7 +166,7 @@ def _layout(
     height_to_width_ratio: float,
 ) -> dict[str, object]:
     if figure_size is not None:
-        _validate_venue_column(venue=venue, column=column)
+        _base_width(venue=venue, column=column)
         return _figure_size_config(figure_size=figure_size)
 
     base_width_in = _base_width(venue=venue, column=column)
@@ -188,22 +181,15 @@ def _layout(
 
 
 def _base_width(*, venue: str, column: str) -> float:
-    venue_key = venue
-    column_key = column
+    if venue == "icml":
+        return _icml_width(column=column)
 
-    if venue_key == "icml":
-        return _icml_width(column=column_key)
-
-    if venue_key in {"iclr", "neurips"}:
-        _require_full_width(column=column_key, venue=venue_key)
+    if venue in {"iclr", "neurips"}:
+        _require_full_width(column=column, venue=venue)
         return 5.5
 
     msg = f"Unknown venue {venue!r}. Expected one of {VENUES!r}."
     raise ValueError(msg)
-
-
-def _validate_venue_column(*, venue: str, column: str) -> None:
-    _base_width(venue=venue, column=column)
 
 
 def _resolve_font_size(*, venue: str, font_size: float | None) -> float:
@@ -247,12 +233,7 @@ def _figure_size_from_base_in(
     subplot_height_in = height_to_width_ratio * subplot_width_in
     height_in = subplot_height_in * rows
 
-    return {
-        "figure.figsize": (width_in, height_in),
-        "figure.constrained_layout.use": True,
-        "figure.autolayout": False,
-        "savefig.pad_inches": PAD_INCHES,
-    }
+    return _figure_size_config(figure_size=(width_in, height_in))
 
 
 def _figure_size_config(*, figure_size: tuple[float, float]) -> dict[str, object]:
@@ -282,11 +263,9 @@ def _font(
     font: str,
     font_weight: str | int,
 ) -> dict[str, object]:
-    venue_key = venue
-
     if usetex:
         return _tex_font(
-            venue=venue_key,
+            venue=venue,
             font=font,
             font_weight=font_weight,
         )

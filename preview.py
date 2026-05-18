@@ -29,6 +29,7 @@ VENUE_LAYOUTS = (
     ("neurips-full", "neurips", "full", 2, 2, 1.0),
 )
 STEP_FRACTIONS = (0.25, 0.50, 0.75, 0.95)
+CONVERGENCE_SAMPLE_COUNT = 401
 TALK_FIGURE_SIZE = (7.5, 4.25)
 SURFACE_HEIGHT_TO_WIDTH_RATIO = 0.94
 STEP_PANEL_INDEX = 1
@@ -81,7 +82,7 @@ def _iterations_to_gap(
 def _convergence_curves(
     *, condition_number: float
 ) -> tuple[list[float], tuple[list[float], ...]]:
-    iterations = [float(index) for index in range(81)]
+    iterations = np.linspace(0.0, 80.0, CONVERGENCE_SAMPLE_COUNT).tolist()
     curves = []
 
     for fraction in STEP_FRACTIONS:

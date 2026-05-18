@@ -57,11 +57,14 @@ def test_convergence_curves_match_quadratic_gap() -> None:
     preview = load_preview()
 
     iterations, curves = preview._convergence_curves(condition_number=4.0)
+    unit_iteration_index = iterations.index(1.0)
 
-    assert iterations[:3] == [0.0, 1.0, 2.0]
+    assert iterations[0] == pytest.approx(0.0)
+    assert iterations[-1] == pytest.approx(80.0)
+    assert len(iterations) == 401
     assert len(curves) == 4
     assert [values[0] for values in curves] == [1.0, 1.0, 1.0, 1.0]
-    assert curves[1][1] == pytest.approx(0.353125)
+    assert curves[1][unit_iteration_index] == pytest.approx(0.353125)
     assert curves[3][-1] < curves[0][-1]
 
 
