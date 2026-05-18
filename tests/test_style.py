@@ -11,7 +11,7 @@ from matplotlib import colormaps, font_manager
 from matplotlib.colors import LinearSegmentedColormap, to_hex, to_rgb
 
 import figmint
-from figmint import register_fonts, style
+from figmint import finish, register_fonts, style
 from figmint._colors import (
     CATPPUCCIN_THEMES,
     COLOR_THEMES,
@@ -356,7 +356,8 @@ CVD_MATRICES = {
 
 
 def test_public_api_exposes_style_and_font_registration() -> None:
-    assert figmint.__all__ == ["register_fonts", "style"]
+    assert figmint.__all__ == ["finish", "register_fonts", "style"]
+    assert figmint.finish is finish
     assert not hasattr(figmint, "paper")
     assert not hasattr(figmint, "slides")
 

@@ -33,19 +33,19 @@
 `figmint` deliberately has a small API, making it easy to grasp:
 
 ```python
-from figmint import register_fonts, style
+from figmint import finish, register_fonts, style
 ```
 
 and that's it.
 
-The `style` function covers all plotting utilities. `register_fonts` is a convenience function to make Matplotlib aware of fonts installed on your computer. It is needed because Matplotlib is notoriously bad with font caches. My workflow is to try using all fonts directly (more on this below), and whenever this fails (you might see something like `findfont: Font family 'Roboto Condensed Light' not found.`), I register the font manually instead of refreshing Matplotlib's unreliable caches and praying.
+The `style` function returns Matplotlib rcParams. `finish` is the post-plot helper for rendered-layout decisions that rcParams cannot make, currently grid-snapped legend placement. `register_fonts` is a convenience function to make Matplotlib aware of fonts installed on your computer. It is needed because Matplotlib is notoriously bad with font caches. My workflow is to try using all fonts directly (more on this below), and whenever this fails (you might see something like `findfont: Font family 'Roboto Condensed Light' not found.`), I register the font manually instead of refreshing Matplotlib's unreliable caches and praying.
 
 The API is designed to make it easy to switch between paper and talk/meeting plots. Paper plots are rigid: the background is always white and font families, font sizes, and figure sizes are determined by the conference's formatting instructions. Slides are completely different: one gets complete freedom to choose backgrounds, used font families, and aspect ratios that affect figure sizes, too. Copy-pasting paper plots into such slides just doesn't look right. But one also doesn't want to spend entire afternoons converting paper plots to match the slide styles. This is where the package comes in handy: switching between the supported themes, different fonts, or figure sizes takes seconds. I highly recommend using `figmint` together with `slidemint` which supports the same themes for `beamer`, making them interact seamlessly.
 
 ```python
 import matplotlib.pyplot as plt
 from pathlib import Path
-from figmint import register_fonts, style
+from figmint import finish, register_fonts, style
 
 # Register fonts if Matplotlib doesn't see them
 SLIDE_FONT_FILES = (
@@ -65,6 +65,8 @@ def plot(path: Path) -> None:
     axis.plot(xs, ys)
     axis.set_xlabel(r"$x$")
     axis.set_ylabel(r"$f(x)$")
+    axis.legend(loc="best")
+    finish(axis)
 
     figure.savefig(path)
     plt.close(figure)
@@ -180,3 +182,5 @@ style(
 - `line_width`
 - `grid_alpha`
 - `height_to_width_ratio`
+
+`finish(axis)` is called after the plot and legend exist, before `savefig(...)`. For a fixed legend location such as `loc="upper right"`, it lets Matplotlib place the legend, then snaps the legend anchor to the nearest major grid coordinate that keeps the legend inside the axes. For `loc="best"`, it searches fixed legend locations and all column counts from one to the number of legend entries, scores each rendered candidate by data overlap and compactness, and snaps the selected candidate to the same major-grid coordinates.
