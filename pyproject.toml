@@ -24,7 +24,7 @@ dependencies = ["matplotlib"]
 version = "0.1.0"
 readme = "README.md"
 license = { file = "LICENSE" }
-requires-python = ">=3.12,<3.15"
+requires-python = ">=3.12"
 
 [project.optional-dependencies]
 dev = ["ruff", "pre-commit", "pytest", "ty", "pytest-cov"]
@@ -164,6 +164,9 @@ ignore = [
     "SLF001",  # Tests may exercise internal helpers directly
 ]
 "*.ipynb" = ["T201"] # Print statements are fine in notebooks
+"scripts/*.py" = [
+    "INP001",
+] # The scripts folder is not an implicit namespace package
 
 [tool.ruff.lint.mccabe]
 max-complexity = 18

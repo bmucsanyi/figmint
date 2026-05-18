@@ -1,4 +1,4 @@
-"""Catppuccin colors used by the matplotlib styles."""
+"""Color tables used by the matplotlib styles."""
 
 from typing import TypedDict
 
@@ -8,41 +8,44 @@ class ColorTheme(TypedDict):
     text: str
     edge: str
     cycle: tuple[str, ...]
-    colormap: tuple[str, ...]
+    colormap: str | tuple[str, ...]
 
 
-CATPPUCCIN_COLORMAPS = {
+REPAIRED_LATTE_CYCLE = (
+    "#375fac",
+    "#ff5f4c",
+    "#00ab55",
+    "#8839ef",
+    "#d20f39",
+    "#bf7300",
+    "#6e9296",
+    "#e154c4",
+    "#268295",
+    "#7287fd",
+)
+
+
+THEME_COLORMAPS = {
+    "normal": "plasma",
     "latte": (
-        "#40a02b",
-        "#179299",
-        "#209fb5",
+        "#eff1f5",
         "#1e66f5",
-        "#8839ef",
-        "#fe640b",
+        "#4c4f69",
     ),
     "frappe": (
-        "#a6d189",
-        "#81c8be",
-        "#85c1dc",
+        "#303446",
         "#8caaee",
-        "#ca9ee6",
-        "#ef9f76",
+        "#c6d0f5",
     ),
     "macchiato": (
-        "#a6da95",
-        "#8bd5ca",
-        "#7dc4e4",
+        "#24273a",
         "#8aadf4",
-        "#c6a0f6",
-        "#f5a97f",
+        "#cad3f5",
     ),
     "mocha": (
-        "#a6e3a1",
-        "#94e2d5",
-        "#74c7ec",
+        "#1e1e2e",
         "#89b4fa",
-        "#cba6f7",
-        "#fab387",
+        "#cdd6f4",
     ),
 }
 
@@ -65,7 +68,7 @@ def _catppuccin_themes() -> dict[str, ColorTheme]:
                 "#209fb5",
                 "#7287fd",
             ),
-            "colormap": CATPPUCCIN_COLORMAPS["latte"],
+            "colormap": THEME_COLORMAPS["latte"],
         },
         "frappe": {
             "background": "#303446",
@@ -83,7 +86,7 @@ def _catppuccin_themes() -> dict[str, ColorTheme]:
                 "#85c1dc",
                 "#babbf1",
             ),
-            "colormap": CATPPUCCIN_COLORMAPS["frappe"],
+            "colormap": THEME_COLORMAPS["frappe"],
         },
         "macchiato": {
             "background": "#24273a",
@@ -101,7 +104,7 @@ def _catppuccin_themes() -> dict[str, ColorTheme]:
                 "#7dc4e4",
                 "#b7bdf8",
             ),
-            "colormap": CATPPUCCIN_COLORMAPS["macchiato"],
+            "colormap": THEME_COLORMAPS["macchiato"],
         },
         "mocha": {
             "background": "#1e1e2e",
@@ -119,20 +122,22 @@ def _catppuccin_themes() -> dict[str, ColorTheme]:
                 "#74c7ec",
                 "#b4befe",
             ),
-            "colormap": CATPPUCCIN_COLORMAPS["mocha"],
+            "colormap": THEME_COLORMAPS["mocha"],
         },
     }
 
 
 def _color_themes() -> dict[str, ColorTheme]:
     return {
-        **CATPPUCCIN_THEMES,
         "normal": {
             **CATPPUCCIN_THEMES["latte"],
             "background": "#ffffff",
+            "cycle": REPAIRED_LATTE_CYCLE,
+            "colormap": THEME_COLORMAPS["normal"],
             "text": "#000000",
             "edge": "#000000",
         },
+        **CATPPUCCIN_THEMES,
     }
 
 

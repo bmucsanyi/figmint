@@ -1,20 +1,62 @@
 """Tests for the public matplotlib style API."""
 
 from collections.abc import Callable
+from itertools import pairwise
 from typing import Any
 
 import matplotlib.pyplot as plt
 import pytest
-from matplotlib import font_manager
-from matplotlib.colors import to_hex
+from matplotlib import colormaps, font_manager
+from matplotlib.colors import LinearSegmentedColormap, to_hex, to_rgb
 
 import figmint
 from figmint import register_fonts, style
-from figmint._colors import CATPPUCCIN_COLORMAPS, CATPPUCCIN_THEMES, COLOR_THEMES
+from figmint._colors import (
+    CATPPUCCIN_THEMES,
+    COLOR_THEMES,
+    REPAIRED_LATTE_CYCLE,
+    THEME_COLORMAPS,
+)
 
 
 def value(config: dict[str, object], key: str) -> Any:
     return config[key]
+
+
+def luminance(color: str) -> float:
+    red, green, blue = to_rgb(color)
+
+    return 0.2126 * red + 0.7152 * green + 0.0722 * blue
+
+
+def linearized_rgb_channel(value: float) -> float:
+    if value <= 0.04045:
+        return value / 12.92
+
+    return ((value + 0.055) / 1.055) ** 2.4
+
+
+def contrast_against_white(color: str) -> float:
+    red, green, blue = to_rgb(color)
+    linear_red = linearized_rgb_channel(red)
+    linear_green = linearized_rgb_channel(green)
+    linear_blue = linearized_rgb_channel(blue)
+    relative_luminance = (
+        0.2126 * linear_red + 0.7152 * linear_green + 0.0722 * linear_blue
+    )
+
+    return 1.05 / (relative_luminance + 0.05)
+
+
+def colormap_colors(theme: str) -> list[str]:
+    colormap = COLOR_THEMES[theme]["colormap"]
+
+    if isinstance(colormap, str):
+        sampled = plt.get_cmap(colormap)
+
+        return [to_hex(sampled(index / 255.0)) for index in range(256)]
+
+    return list(colormap)
 
 
 CATPPUCCIN_CYCLES = {
@@ -77,6 +119,7 @@ def test_public_api_exposes_style_and_font_registration() -> None:
 
 def test_color_tables_only_contain_style_roles() -> None:
     assert set(CATPPUCCIN_THEMES) == {"latte", "frappe", "macchiato", "mocha"}
+    assert next(iter(COLOR_THEMES)) == "normal"
     assert set(COLOR_THEMES) == {
         "normal",
         "latte",
@@ -102,12 +145,17 @@ def test_default_theme_is_publication_style() -> None:
     assert value(config, "xtick.labelcolor") == "#000000"
     assert value(config, "ytick.labelcolor") == "#000000"
     assert value(config, "axes.edgecolor") == "#000000"
-    assert value(config, "grid.color") == "#000000"
+    assert value(config, "grid.color") == "#9ca0b0"
     assert value(config, "legend.edgecolor") == "#000000"
     assert value(config, "patch.edgecolor") == "#000000"
-    assert value(config, "image.cmap") == "figmint_normal"
-    assert (
-        value(config, "axes.prop_cycle").by_key()["color"] == CATPPUCCIN_CYCLES["latte"]
+    assert value(config, "image.cmap") == "plasma"
+    assert value(config, "axes.grid") is True
+    assert value(config, "grid.alpha") == pytest.approx(0.16)
+    assert value(config, "legend.frameon") is True
+    assert value(config, "lines.markersize") == pytest.approx(3.0)
+    assert value(config, "lines.markeredgewidth") == pytest.approx(0.5)
+    assert value(config, "axes.prop_cycle").by_key()["color"] == list(
+        REPAIRED_LATTE_CYCLE,
     )
     assert value(config, "font.size") == pytest.approx(8.0)
 
@@ -144,6 +192,7 @@ def test_theme_backgrounds_and_text(
     assert value(config, "axes.grid") is True
     assert value(config, "legend.edgecolor") == edge
     assert value(config, "legend.framealpha") == pytest.approx(1.0)
+    assert value(config, "legend.frameon") is True
     assert value(config, "patch.edgecolor") == edge
     assert value(config, "image.cmap") == f"figmint_{theme}"
     assert value(config, "savefig.transparent") is False
@@ -157,11 +206,24 @@ def test_color_cycles_are_exact(theme: str) -> None:
     )
 
 
-def test_normal_color_cycle_is_latte_cycle() -> None:
-    assert (
-        value(style("normal", venue="icml"), "axes.prop_cycle").by_key()["color"]
-        == CATPPUCCIN_CYCLES["latte"]
-    )
+def test_normal_color_cycle_is_repaired_latte_cycle() -> None:
+    assert value(style("normal", venue="icml"), "axes.prop_cycle").by_key()[
+        "color"
+    ] == list(REPAIRED_LATTE_CYCLE)
+
+
+def test_repaired_latte_cycle_has_white_background_contrast() -> None:
+    assert min(contrast_against_white(color) for color in REPAIRED_LATTE_CYCLE) >= 3.0
+
+
+def test_normal_grid_matches_latte_grid() -> None:
+    normal = style("normal", venue="icml")
+    latte = style("latte", venue="icml")
+
+    assert value(normal, "axes.grid") == value(latte, "axes.grid")
+    assert value(normal, "grid.color") == value(latte, "grid.color")
+    assert value(normal, "grid.alpha") == value(latte, "grid.alpha")
+    assert value(normal, "grid.linestyle") == value(latte, "grid.linestyle")
 
 
 @pytest.mark.parametrize("theme", ["latte", "frappe", "macchiato", "mocha"])
@@ -174,21 +236,51 @@ def test_colormaps_are_exact(theme: str) -> None:
         colormap = plt.get_cmap()
 
     assert colormap.name == f"figmint_{theme}"
-    assert to_hex(colormap(0.0)) == CATPPUCCIN_COLORMAPS[theme][0]
-    assert to_hex(colormap(1.0)) == CATPPUCCIN_COLORMAPS[theme][-1]
+    assert to_hex(colormap(0.0)) == THEME_COLORMAPS[theme][0]
+    assert to_hex(colormap(1.0)) == THEME_COLORMAPS[theme][-1]
 
 
-def test_normal_colormap_is_latte_colormap() -> None:
+def test_normal_colormap_is_plasma() -> None:
     config = style("normal", venue="icml")
 
-    assert value(config, "image.cmap") == "figmint_normal"
+    assert value(config, "image.cmap") == "plasma"
 
     with plt.rc_context(config):
         colormap = plt.get_cmap()
 
-    assert colormap.name == "figmint_normal"
-    assert to_hex(colormap(0.0)) == CATPPUCCIN_COLORMAPS["latte"][0]
-    assert to_hex(colormap(1.0)) == CATPPUCCIN_COLORMAPS["latte"][-1]
+    assert colormap.name == "plasma"
+    assert COLOR_THEMES["normal"]["colormap"] == "plasma"
+
+
+def test_owned_colormap_registration_overwrites_stale_entries() -> None:
+    style("latte", venue="icml")
+    stale_colormap = LinearSegmentedColormap.from_list(
+        "figmint_latte",
+        ("#ffffff", "#000000"),
+    )
+
+    with pytest.warns(UserWarning, match="Overwriting the cmap"):
+        colormaps.register(stale_colormap, name="figmint_latte", force=True)
+
+    with pytest.warns(UserWarning, match="Overwriting the cmap"):
+        config = style("latte", venue="icml")
+
+    with plt.rc_context(config):
+        colormap = plt.get_cmap()
+
+    assert colormap.name == "figmint_latte"
+    assert to_hex(colormap(0.0)) == THEME_COLORMAPS["latte"][0]
+    assert to_hex(colormap(1.0)) == THEME_COLORMAPS["latte"][-1]
+
+
+@pytest.mark.parametrize("theme", ["latte", "frappe", "macchiato", "mocha"])
+def test_colormaps_have_ordered_luminance(theme: str) -> None:
+    color_luminances = [luminance(color) for color in colormap_colors(theme)]
+    pairs = tuple(pairwise(color_luminances))
+    increasing = all(left <= right for left, right in pairs)
+    decreasing = all(left >= right for left, right in pairs)
+
+    assert increasing or decreasing
 
 
 @pytest.mark.parametrize("theme", ["normal", "latte", "frappe", "macchiato", "mocha"])
@@ -304,8 +396,40 @@ def test_explicit_overrides_are_applied() -> None:
     assert value(config, "font.size") == pytest.approx(13.0)
     assert value(config, "figure.figsize") == (7.0, 3.5)
     assert value(config, "axes.linewidth") == pytest.approx(0.8)
+    assert value(config, "lines.markeredgewidth") == pytest.approx(0.8)
     assert value(config, "grid.alpha") == pytest.approx(0.4)
     assert value(config, "figure.facecolor") == "#303446"
+
+
+@pytest.mark.parametrize(
+    ("call", "message"),
+    [
+        (lambda: style("normal", venue="icml", width_fraction=0.0), "width_fraction"),
+        (lambda: style("normal", venue="icml", rows=0), "rows"),
+        (lambda: style("normal", venue="icml", cols=0), "cols"),
+        (lambda: style("normal", venue="icml", line_width=0.0), "line_width"),
+        (lambda: style("normal", venue="icml", grid_alpha=-0.1), "grid_alpha"),
+        (lambda: style("normal", venue="icml", grid_alpha=1.1), "grid_alpha"),
+    ],
+)
+def test_invalid_numeric_style_inputs_fail_loudly(
+    call: Callable[[], None],
+    message: str,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        call()
+
+
+def test_explicit_figure_size_does_not_require_column_preset() -> None:
+    config = style(
+        "normal",
+        venue="iclr",
+        column="half",
+        figure_size=(4.0, 2.0),
+    )
+
+    assert value(config, "figure.figsize") == (4.0, 2.0)
+    assert value(config, "font.size") == pytest.approx(9.0)
 
 
 def test_register_fonts_adds_font_files() -> None:

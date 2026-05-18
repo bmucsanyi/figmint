@@ -5,7 +5,7 @@ from pathlib import Path
 from cycler import cycler
 from matplotlib import colormaps
 from matplotlib import font_manager as mpl_font_manager
-from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.colors import Colormap, LinearSegmentedColormap
 
 from figmint._colors import COLOR_THEMES
 
@@ -46,7 +46,6 @@ EDGE_COLOR_PARAMS = (
     "axes.edgecolor",
     "xtick.color",
     "ytick.color",
-    "grid.color",
     "legend.edgecolor",
     "patch.edgecolor",
 )
@@ -66,10 +65,18 @@ def style(
     font_size: float | None = None,
     figure_size: tuple[float, float] | None = None,
     line_width: float = 0.5,
-    grid_alpha: float = 0.22,
+    grid_alpha: float = 0.16,
     height_to_width_ratio: float = GOLDEN_RATIO,
 ) -> dict[str, object]:
     """Return rcParams for publication figures and themed variants."""
+    _validate_style_inputs(
+        width_fraction=width_fraction,
+        rows=rows,
+        cols=cols,
+        line_width=line_width,
+        grid_alpha=grid_alpha,
+    )
+
     return {
         **_layout(
             venue=venue,
@@ -92,6 +99,33 @@ def style(
         **_line_config(line_width=line_width),
         **_theme_config(theme=theme, grid_alpha=grid_alpha),
     }
+
+
+def _validate_style_inputs(
+    *,
+    width_fraction: float,
+    rows: int,
+    cols: int,
+    line_width: float,
+    grid_alpha: float,
+) -> None:
+    _require_positive(name="width_fraction", value=width_fraction)
+    _require_positive(name="rows", value=rows)
+    _require_positive(name="cols", value=cols)
+    _require_positive(name="line_width", value=line_width)
+    _require_unit_interval(name="grid_alpha", value=grid_alpha)
+
+
+def _require_positive(*, name: str, value: float) -> None:
+    if value <= 0:
+        msg = f"{name} must be positive."
+        raise ValueError(msg)
+
+
+def _require_unit_interval(*, name: str, value: float) -> None:
+    if not 0.0 <= value <= 1.0:
+        msg = f"{name} must be between 0.0 and 1.0."
+        raise ValueError(msg)
 
 
 def register_fonts(*font_files: str | Path) -> None:
@@ -120,9 +154,10 @@ def _theme_config(
         raise ValueError(msg)
 
     colors = COLOR_THEMES[theme]
-    _register_colormap(theme=theme, colors=colors["colormap"])
+    colormap_name = _resolve_colormap(theme=theme, colormap=colors["colormap"])
     background = colors["background"]
     edge = colors["edge"]
+    grid = _grid_color(theme=theme)
     text = colors["text"]
 
     return {
@@ -131,23 +166,60 @@ def _theme_config(
         **dict.fromkeys(EDGE_COLOR_PARAMS, edge),
         "axes.prop_cycle": cycler(color=colors["cycle"]),
         "axes.grid": True,
+        "grid.color": grid,
         "grid.alpha": grid_alpha,
         "grid.linestyle": "solid",
         "legend.framealpha": 1.0,
+        "legend.frameon": True,
         "savefig.transparent": False,
-        "image.cmap": _colormap_name(theme=theme),
+        "image.cmap": colormap_name,
     }
 
 
-def _register_colormap(*, theme: str, colors: tuple[str, ...]) -> None:
-    name = _colormap_name(theme=theme)
+def _grid_color(*, theme: str) -> str:
+    if theme == "normal":
+        return COLOR_THEMES["latte"]["edge"]
 
-    if name in colormaps:
-        return
+    return COLOR_THEMES[theme]["edge"]
+
+
+def _resolve_colormap(*, theme: str, colormap: str | tuple[str, ...]) -> str:
+    if isinstance(colormap, str):
+        return colormap
+
+    return _register_colormap(theme=theme, colormap=colormap)
+
+
+def _register_colormap(*, theme: str, colormap: tuple[str, ...]) -> str:
+    name = _colormap_name(theme=theme)
+    next_colormap = LinearSegmentedColormap.from_list(name, colormap)
+
+    if name in colormaps and _registered_colormap_matches(
+        name=name,
+        colormap=next_colormap,
+    ):
+        return name
 
     colormaps.register(
-        LinearSegmentedColormap.from_list(name, colors),
+        next_colormap,
         name=name,
+        force=True,
+    )
+
+    return name
+
+
+def _registered_colormap_matches(*, name: str, colormap: Colormap) -> bool:
+    registered = colormaps[name]
+
+    if registered.N != colormap.N:
+        return False
+
+    positions = [index / (colormap.N - 1) for index in range(colormap.N)]
+
+    return all(
+        tuple(registered(position)) == tuple(colormap(position))
+        for position in positions
     )
 
 
@@ -166,7 +238,7 @@ def _layout(
     height_to_width_ratio: float,
 ) -> dict[str, object]:
     if figure_size is not None:
-        _base_width(venue=venue, column=column)
+        _require_known_venue(venue=venue)
         return _figure_size_config(figure_size=figure_size)
 
     base_width_in = _base_width(venue=venue, column=column)
@@ -180,6 +252,16 @@ def _layout(
     )
 
 
+def _require_known_venue(*, venue: str) -> None:
+    if venue not in VENUES:
+        msg = _unknown_venue_message(venue=venue)
+        raise ValueError(msg)
+
+
+def _unknown_venue_message(*, venue: str) -> str:
+    return f"Unknown venue {venue!r}. Expected one of {VENUES!r}."
+
+
 def _base_width(*, venue: str, column: str) -> float:
     if venue == "icml":
         return _icml_width(column=column)
@@ -188,7 +270,7 @@ def _base_width(*, venue: str, column: str) -> float:
         _require_full_width(column=column, venue=venue)
         return 5.5
 
-    msg = f"Unknown venue {venue!r}. Expected one of {VENUES!r}."
+    msg = _unknown_venue_message(venue=venue)
     raise ValueError(msg)
 
 
@@ -345,6 +427,8 @@ def _line_config(*, line_width: float) -> dict[str, object]:
     return {
         "axes.linewidth": line_width,
         "lines.linewidth": 2.0 * line_width,
+        "lines.markersize": 3.0,
+        "lines.markeredgewidth": line_width,
         "xtick.major.width": tick_major_width,
         "ytick.major.width": tick_major_width,
         "xtick.minor.width": tick_minor_width,
