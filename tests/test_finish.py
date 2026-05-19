@@ -64,6 +64,94 @@ def test_finish_snaps_fixed_legend_location_to_major_grid() -> None:
         plt.close(figure)
 
 
+def test_finish_center_right_snaps_right_edge_and_preserves_center() -> None:
+    with plt.rc_context(style("normal", venue="icml")):
+        figure, axis = plt.subplots()
+        axis.set_xlim(0.0, 1.0)
+        axis.set_ylim(0.0, 1.0)
+        axis.set_xticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+        axis.set_yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+        axis.plot([0.0, 1.0], [0.0, 1.0], label="baseline")
+        initial_legend = axis.legend(loc="center right")
+        initial_box = legend_box_axes(axis, initial_legend)
+        initial_center_y = 0.5 * (initial_box.y0 + initial_box.y1)
+
+        finish(axis)
+        legend = axis.get_legend()
+        assert legend is not None
+        box = legend_box_axes(axis, legend)
+        inset_x, _ = frame_inset_axes(axis, legend)
+
+        assert box.x1 == pytest.approx(1.0 - inset_x)
+        assert 0.5 * (box.y0 + box.y1) == pytest.approx(initial_center_y)
+
+        plt.close(figure)
+
+
+def test_finish_keeps_spines_above_no_edge_legend() -> None:
+    with plt.rc_context(style("normal", venue="icml")):
+        figure, axis = plt.subplots()
+        axis.plot([0.0, 1.0], [0.0, 1.0], label="baseline")
+        axis.legend(loc="upper left")
+
+        finish(axis)
+        legend = axis.get_legend()
+        assert legend is not None
+
+        for spine in axis.spines.values():
+            assert spine.get_zorder() > legend.get_zorder()
+
+        plt.close(figure)
+
+
+def test_finish_top_center_snaps_top_edge_and_preserves_center() -> None:
+    with plt.rc_context(style("normal", venue="icml")):
+        figure, axis = plt.subplots()
+        axis.set_xlim(0.0, 1.0)
+        axis.set_ylim(0.0, 1.0)
+        axis.set_xticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+        axis.set_yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+        axis.plot([0.0, 1.0], [0.0, 1.0], label="baseline")
+        initial_legend = axis.legend(loc="upper center")
+        initial_box = legend_box_axes(axis, initial_legend)
+        initial_center_x = 0.5 * (initial_box.x0 + initial_box.x1)
+
+        finish(axis)
+        legend = axis.get_legend()
+        assert legend is not None
+        box = legend_box_axes(axis, legend)
+        _, inset_y = frame_inset_axes(axis, legend)
+
+        assert 0.5 * (box.x0 + box.x1) == pytest.approx(initial_center_x)
+        assert box.y1 == pytest.approx(1.0 - inset_y)
+
+        plt.close(figure)
+
+
+def test_finish_center_center_preserves_both_centers() -> None:
+    with plt.rc_context(style("normal", venue="icml")):
+        figure, axis = plt.subplots()
+        axis.set_xlim(0.0, 1.0)
+        axis.set_ylim(0.0, 1.0)
+        axis.set_xticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+        axis.set_yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+        axis.plot([0.0, 1.0], [0.0, 1.0], label="baseline")
+        initial_legend = axis.legend(loc="center")
+        initial_box = legend_box_axes(axis, initial_legend)
+        initial_center_x = 0.5 * (initial_box.x0 + initial_box.x1)
+        initial_center_y = 0.5 * (initial_box.y0 + initial_box.y1)
+
+        finish(axis)
+        legend = axis.get_legend()
+        assert legend is not None
+        box = legend_box_axes(axis, legend)
+
+        assert 0.5 * (box.x0 + box.x1) == pytest.approx(initial_center_x)
+        assert 0.5 * (box.y0 + box.y1) == pytest.approx(initial_center_y)
+
+        plt.close(figure)
+
+
 def test_finish_snap_survives_constrained_layout_reflow() -> None:
     with plt.rc_context(style("normal", venue="icml")):
         figure, axes = plt.subplots(1, 2)

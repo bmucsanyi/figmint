@@ -391,7 +391,7 @@ def test_default_theme_is_publication_style() -> None:
     assert value(config, "ytick.labelcolor") == "#000000"
     assert value(config, "axes.edgecolor") == "#000000"
     assert value(config, "grid.color") == "#9ca0b0"
-    assert value(config, "legend.edgecolor") == "#000000"
+    assert value(config, "legend.edgecolor") == "none"
     assert value(config, "patch.edgecolor") == "#000000"
     assert value(config, "image.cmap") == "plasma"
     assert value(config, "axes.grid") is True
@@ -443,7 +443,7 @@ def test_theme_backgrounds_and_text(
     assert value(config, "ytick.labelcolor") == text
     assert value(config, "grid.color") == edge
     assert value(config, "axes.grid") is True
-    assert value(config, "legend.edgecolor") == edge
+    assert value(config, "legend.edgecolor") == "none"
     assert value(config, "legend.framealpha") == pytest.approx(1.0)
     assert value(config, "legend.frameon") is True
     assert value(config, "patch.edgecolor") == edge

@@ -108,7 +108,7 @@ Supported themes are:
 - `macchiato`
 - `mocha`
 
-`normal` uses a white background, black text, black edges, a repaired Catppuccin Latte categorical cycle, and Matplotlib's built-in `plasma` colormap for scalar data. Paper figures also use framed legends and a low-alpha default grid. The normal categorical cycle keeps the Latte ordering and treats the cycle order as a priority list: earlier colors move only when the constraints force them to move, while later colors absorb more of the repair.
+`normal` uses a white background, black text, black edges, a repaired Catppuccin Latte categorical cycle, and Matplotlib's built-in `plasma` colormap for scalar data. Paper figures also use filled legend backgrounds and a low-alpha default grid. The normal categorical cycle keeps the Latte ordering and treats the cycle order as a priority list: earlier colors move only when the constraints force them to move, while later colors absorb more of the repair.
 
 ### Normal Color Cycle
 

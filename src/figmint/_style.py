@@ -46,7 +46,6 @@ EDGE_COLOR_PARAMS = (
     "axes.edgecolor",
     "xtick.color",
     "ytick.color",
-    "legend.edgecolor",
     "patch.edgecolor",
 )
 
@@ -170,6 +169,7 @@ def _theme_config(
         "grid.color": grid,
         "grid.alpha": grid_alpha,
         "grid.linestyle": "solid",
+        "legend.edgecolor": "none",
         "legend.framealpha": 1.0,
         "legend.frameon": True,
         "savefig.transparent": False,

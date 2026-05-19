@@ -8,6 +8,7 @@ from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 from matplotlib.backend_bases import RendererBase
 from matplotlib.collections import Collection, PolyCollection
+from matplotlib.colors import to_rgba
 from matplotlib.image import AxesImage
 from matplotlib.legend import Legend
 from matplotlib.lines import Line2D
@@ -17,6 +18,7 @@ from matplotlib.text import Text
 from matplotlib.transforms import Bbox
 
 EPSILON = 1.0e-9
+CENTER_ANCHOR_FRACTION = 0.5
 LOC_TUPLE_LENGTH = 2
 PATH_VERTEX_LENGTH = 2
 UNIT_ROUND_DIGITS = 12
@@ -62,6 +64,11 @@ def finish(axis: Axes) -> Axes:
     else:
         _snap_existing_legend(axis=axis, legend=legend, loc=loc, renderer=renderer)
 
+    final_legend = axis.get_legend()
+
+    if final_legend is not None:
+        _raise_spines_above_no_edge_legend(axis=axis, legend=final_legend)
+
     _draw(axis)
 
     return axis
@@ -81,6 +88,18 @@ def _legend_loc(legend: Legend) -> int | tuple[float, float]:
 
     msg = f"Unsupported legend location: {loc!r}."
     raise ValueError(msg)
+
+
+def _raise_spines_above_no_edge_legend(*, axis: Axes, legend: Legend) -> None:
+    edge_rgba = to_rgba(legend.get_frame().get_edgecolor())
+
+    if edge_rgba[3] > EPSILON:
+        return
+
+    zorder = legend.get_zorder() + 1.0
+
+    for spine in axis.spines.values():
+        spine.set_zorder(zorder)
 
 
 def _draw(axis: Axes) -> RendererBase:
@@ -280,6 +299,8 @@ def _nearest_snapped_box(
     x_grid, y_grid = _grid_values(axis)
     anchor_x = box.x0 + box.width * fraction[0]
     anchor_y = box.y0 + box.height * fraction[1]
+    x_targets = _snap_targets(anchor=anchor_x, fraction=fraction[0], grid=x_grid)
+    y_targets = _snap_targets(anchor=anchor_y, fraction=fraction[1], grid=y_grid)
     best_box = None
     best_score = (
         float("inf"),
@@ -287,8 +308,8 @@ def _nearest_snapped_box(
         float("inf"),
     )
 
-    for grid_x in x_grid:
-        for grid_y in y_grid:
+    for grid_x in x_targets:
+        for grid_y in y_targets:
             candidate = Bbox.from_bounds(
                 grid_x - box.width * fraction[0],
                 grid_y - box.height * fraction[1],
@@ -311,6 +332,18 @@ def _nearest_snapped_box(
         return None
 
     return best_box, best_score[0]
+
+
+def _snap_targets(
+    *,
+    anchor: float,
+    fraction: float,
+    grid: tuple[float, ...],
+) -> tuple[float, ...]:
+    if abs(fraction - CENTER_ANCHOR_FRACTION) <= EPSILON:
+        return (anchor,)
+
+    return grid
 
 
 def _grid_values(axis: Axes) -> tuple[tuple[float, ...], tuple[float, ...]]:
