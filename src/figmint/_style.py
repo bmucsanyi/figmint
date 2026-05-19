@@ -452,4 +452,8 @@ def _line_config(*, line_width: float) -> dict[str, object]:
         "legend.frameon": True,
         "legend.fancybox": False,
         "axes.axisbelow": True,
+        "axes.spines.left": True,
+        "axes.spines.bottom": True,
+        "axes.spines.top": False,
+        "axes.spines.right": False,
     }

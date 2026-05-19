@@ -31,9 +31,6 @@ def _curve_points(*, rate: float) -> tuple[list[float], list[float]]:
 def _finish_axis(axis: Axes) -> None:
     axis.tick_params(direction="out")
 
-    for spine in ("top", "right"):
-        axis.spines[spine].set_visible(False)
-
 
 def _draw_curves(axis: Axes) -> None:
     for index, rate in enumerate(CURVE_RATES):

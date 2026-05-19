@@ -397,6 +397,10 @@ def test_default_theme_is_publication_style() -> None:
     assert value(config, "axes.grid") is True
     assert value(config, "grid.alpha") == pytest.approx(0.16)
     assert value(config, "legend.frameon") is True
+    assert value(config, "axes.spines.left") is True
+    assert value(config, "axes.spines.bottom") is True
+    assert value(config, "axes.spines.top") is False
+    assert value(config, "axes.spines.right") is False
     assert value(config, "lines.markersize") == pytest.approx(3.0)
     assert value(config, "lines.markeredgewidth") == pytest.approx(0.5)
     assert value(config, "axes.prop_cycle").by_key()["color"] == list(
@@ -446,6 +450,10 @@ def test_theme_backgrounds_and_text(
     assert value(config, "legend.edgecolor") == "none"
     assert value(config, "legend.framealpha") == pytest.approx(1.0)
     assert value(config, "legend.frameon") is True
+    assert value(config, "axes.spines.left") is True
+    assert value(config, "axes.spines.bottom") is True
+    assert value(config, "axes.spines.top") is False
+    assert value(config, "axes.spines.right") is False
     assert value(config, "patch.edgecolor") == edge
     assert value(config, "image.cmap") == f"figmint_{theme}"
     assert value(config, "savefig.transparent") is False
