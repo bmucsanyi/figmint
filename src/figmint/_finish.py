@@ -1,7 +1,7 @@
 """Post-plot layout helpers."""
 
 from collections.abc import Iterable
-from math import ceil
+from math import ceil, hypot, isfinite
 from typing import Any
 
 from matplotlib.artist import Artist
@@ -18,9 +18,14 @@ from matplotlib.transforms import Bbox
 
 EPSILON = 1.0e-9
 LOC_TUPLE_LENGTH = 2
+PATH_VERTEX_LENGTH = 2
 UNIT_ROUND_DIGITS = 12
 LEGEND_LOC_ATTRIBUTE = "_loc"
 FIXED_LOC_CODES = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+UPPER_LOC_CODES = (1, 2, 9)
+LOWER_LOC_CODES = (3, 4, 8)
+LEFT_LOC_CODES = (6,)
+RIGHT_LOC_CODES = (5, 7)
 LOC_ANCHOR_FRACTIONS = {
     1: (1.0, 1.0),
     2: (0.0, 1.0),
@@ -46,11 +51,14 @@ def finish(axis: Axes) -> Axes:
     if legend is None:
         return axis
 
+    legend.set_in_layout(False)
     renderer = _draw(axis)
     loc = _legend_loc(legend)
 
     if loc == Legend.codes["best"]:
-        _optimize_best_legend(axis=axis, legend=legend)
+        _optimize_legend(axis=axis, legend=legend, locs=FIXED_LOC_CODES)
+    elif isinstance(loc, int):
+        _optimize_legend(axis=axis, legend=legend, locs=(loc,))
     else:
         _snap_existing_legend(axis=axis, legend=legend, loc=loc, renderer=renderer)
 
@@ -100,13 +108,16 @@ def _snap_existing_legend(
         msg = "No grid-snapped legend placement fits inside the axes."
         raise ValueError(msg)
 
-    _apply_axes_box(axis=axis, legend=legend, box=snapped[0])
+    _apply_axes_box(
+        axis=axis, legend=legend, box=snapped[0], loc=loc, renderer=renderer
+    )
 
 
-def _optimize_best_legend(
+def _optimize_legend(
     *,
     axis: Axes,
     legend: Legend,
+    locs: tuple[int, ...],
 ) -> None:
     handles, labels, title, frameon = _legend_parts(legend)
     entry_count = len(labels)
@@ -118,7 +129,7 @@ def _optimize_best_legend(
     legend.remove()
 
     for ncols in range(1, entry_count + 1):
-        for loc in FIXED_LOC_CODES:
+        for loc in locs:
             result = _best_candidate_score(
                 axis=axis,
                 handles=handles,
@@ -140,16 +151,35 @@ def _optimize_best_legend(
         msg = "No grid-snapped legend placement fits inside the axes."
         raise ValueError(msg)
 
-    _, best_box, best_ncols = best
+    _, _, best_ncols, best_loc = best
     best_legend = axis.legend(
         handles,
         labels,
-        loc="center",
+        loc=best_loc,
         ncols=best_ncols,
         title=title,
         frameon=frameon,
     )
-    _apply_axes_box(axis=axis, legend=best_legend, box=best_box)
+    best_legend.set_in_layout(False)
+    renderer = _draw(axis)
+    final_box = _legend_box_axes(axis=axis, legend=best_legend, renderer=renderer)
+    snapped = _nearest_snapped_box(
+        axis=axis,
+        box=final_box,
+        fraction=_anchor_fraction(best_loc),
+    )
+
+    if snapped is None:
+        msg = "No grid-snapped legend placement fits inside the axes."
+        raise ValueError(msg)
+
+    _apply_axes_box(
+        axis=axis,
+        legend=best_legend,
+        box=snapped[0],
+        loc=best_loc,
+        renderer=renderer,
+    )
 
 
 def _best_candidate_score(
@@ -162,7 +192,7 @@ def _best_candidate_score(
     entry_count: int,
     ncols: int,
     loc: int,
-) -> tuple[tuple[float, ...], Bbox, int] | None:
+) -> tuple[tuple[float, ...], Bbox, int, int] | None:
     candidate = axis.legend(
         handles,
         labels,
@@ -171,6 +201,7 @@ def _best_candidate_score(
         title=title,
         frameon=frameon,
     )
+    candidate.set_in_layout(False)
     renderer = _draw(axis)
     legend_box = _legend_box_axes(axis=axis, legend=candidate, renderer=renderer)
     snapped = _nearest_snapped_box(
@@ -195,7 +226,7 @@ def _best_candidate_score(
     )
     candidate.remove()
 
-    return score, snapped[0], ncols
+    return score, snapped[0], ncols, loc
 
 
 def _legend_parts(legend: Legend) -> tuple[list[Artist], list[str], str, bool]:
@@ -321,9 +352,65 @@ def _box_inside_axes(box: Bbox) -> bool:
     )
 
 
-def _apply_axes_box(*, axis: Axes, legend: Legend, box: Bbox) -> None:
-    legend.set_bbox_to_anchor((0.0, 0.0, 1.0, 1.0), transform=axis.transAxes)
-    legend.set_loc((box.x0, box.y0))
+def _apply_axes_box(
+    *,
+    axis: Axes,
+    legend: Legend,
+    box: Bbox,
+    loc: int | tuple[float, float],
+    renderer: RendererBase,
+) -> None:
+    legend.set_in_layout(False)
+    fraction = _anchor_fraction(loc)
+    inset_x, inset_y = _frame_boundary_inset_axes(
+        axis=axis,
+        legend=legend,
+        renderer=renderer,
+    )
+    anchor_x = _inset_boundary_anchor(
+        value=box.x0 + box.width * fraction[0],
+        inset=inset_x,
+    )
+    anchor_y = _inset_boundary_anchor(
+        value=box.y0 + box.height * fraction[1],
+        inset=inset_y,
+    )
+
+    if isinstance(loc, tuple):
+        legend.set_bbox_to_anchor((0.0, 0.0, 1.0, 1.0), transform=axis.transAxes)
+        legend.set_loc((anchor_x, anchor_y))
+        return
+
+    legend.borderaxespad = 0.0
+    legend.set_bbox_to_anchor((anchor_x, anchor_y), transform=axis.transAxes)
+    legend.set_loc(loc)
+
+
+def _frame_boundary_inset_axes(
+    *,
+    axis: Axes,
+    legend: Legend,
+    renderer: RendererBase,
+) -> tuple[float, float]:
+    linewidth = legend.get_frame().get_linewidth()
+
+    if linewidth <= 0.0:
+        return 0.0, 0.0
+
+    axis_box = axis.get_window_extent(renderer)
+    inset = 0.5 * linewidth * axis.figure.dpi / 72.0
+
+    return inset / axis_box.width, inset / axis_box.height
+
+
+def _inset_boundary_anchor(*, value: float, inset: float) -> float:
+    if value <= EPSILON:
+        return inset
+
+    if value >= 1.0 - EPSILON:
+        return 1.0 - inset
+
+    return value
 
 
 def _axes_box_to_display(*, axis: Axes, box: Bbox) -> Bbox:
@@ -353,16 +440,29 @@ def _candidate_score(
         renderer=renderer,
         badness=badness,
     )
+    clearance = _point_data_clearance(axis=axis, legend_box=box, renderer=renderer)
 
     return (
         badness,
         balance,
+        -_score_float(clearance),
         -_score_float(margin),
+        _loc_complexity(loc),
         _score_float(width_ratio + height_ratio),
         FIXED_LOC_CODES.index(loc),
         _score_float(snap_distance),
         ncols,
     )
+
+
+def _loc_complexity(loc: int) -> int:
+    if loc in UPPER_LOC_CODES or loc in LOWER_LOC_CODES:
+        return 0
+
+    if loc in LEFT_LOC_CODES or loc in RIGHT_LOC_CODES:
+        return 1
+
+    return 2
 
 
 def _score_float(value: float) -> float:
@@ -381,15 +481,22 @@ def _legend_margin_scale(
         return 1.0
 
     low = 1.0
-    high = _axis_expansion_limit(
+    high = _axis_cover_scale(
         axis=axis,
         box=legend_box,
         loc=loc,
         renderer=renderer,
     )
 
-    if high <= low:
-        return high
+    if (
+        _data_badness(
+            axis=axis,
+            legend_box=_expanded_box(box=legend_box, loc=loc, scale=high),
+            renderer=renderer,
+        )
+        == 0
+    ):
+        return float("inf")
 
     while high - low > EPSILON:
         middle = 0.5 * (low + high)
@@ -407,7 +514,7 @@ def _legend_margin_scale(
     return low
 
 
-def _axis_expansion_limit(
+def _axis_cover_scale(
     *,
     axis: Axes,
     box: Bbox,
@@ -418,26 +525,44 @@ def _axis_expansion_limit(
     fraction = _anchor_fraction(loc)
     anchor_x = box.x0 + box.width * fraction[0]
     anchor_y = box.y0 + box.height * fraction[1]
-    left_limit = _edge_scale(anchor=anchor_x, edge=box.x0, boundary=axis_box.x0)
-    right_limit = _edge_scale(anchor=anchor_x, edge=box.x1, boundary=axis_box.x1)
-    bottom_limit = _edge_scale(anchor=anchor_y, edge=box.y0, boundary=axis_box.y0)
-    top_limit = _edge_scale(anchor=anchor_y, edge=box.y1, boundary=axis_box.y1)
-
-    return min(
-        left_limit,
-        right_limit,
-        bottom_limit,
-        top_limit,
+    scales = (
+        _boundary_cover_scale(
+            anchor=anchor_x,
+            boundary=axis_box.x0,
+            dimension=box.width * fraction[0],
+        ),
+        _boundary_cover_scale(
+            anchor=anchor_x,
+            boundary=axis_box.x1,
+            dimension=box.width * (1.0 - fraction[0]),
+        ),
+        _boundary_cover_scale(
+            anchor=anchor_y,
+            boundary=axis_box.y0,
+            dimension=box.height * fraction[1],
+        ),
+        _boundary_cover_scale(
+            anchor=anchor_y,
+            boundary=axis_box.y1,
+            dimension=box.height * (1.0 - fraction[1]),
+        ),
     )
 
+    return max(1.0, *(scale for scale in scales if scale is not None))
 
-def _edge_scale(*, anchor: float, edge: float, boundary: float) -> float:
-    distance = abs(edge - anchor)
+
+def _boundary_cover_scale(
+    *, anchor: float, boundary: float, dimension: float
+) -> float | None:
+    distance = abs(boundary - anchor)
 
     if distance <= EPSILON:
-        return float("inf")
+        return 1.0
 
-    return abs(boundary - anchor) / distance
+    if dimension <= EPSILON:
+        return None
+
+    return distance / dimension
 
 
 def _expanded_box(*, box: Bbox, loc: int, scale: float) -> Bbox:
@@ -469,6 +594,23 @@ def _data_badness(*, axis: Axes, legend_box: Bbox, renderer: RendererBase) -> in
     return badness
 
 
+def _point_data_clearance(
+    *, axis: Axes, legend_box: Bbox, renderer: RendererBase
+) -> float:
+    distances = []
+
+    for artist in axis.get_children():
+        for x, y in _artist_points(axis=axis, artist=artist, renderer=renderer):
+            x_distance = max(legend_box.x0 - x, 0.0, x - legend_box.x1)
+            y_distance = max(legend_box.y0 - y, 0.0, y - legend_box.y1)
+            distances.append(hypot(x_distance, y_distance))
+
+    if not distances:
+        return float("inf")
+
+    return min(distances)
+
+
 def _artist_badness(
     *,
     axis: Axes,
@@ -478,7 +620,7 @@ def _artist_badness(
 ) -> int:
     badness = 0
 
-    if not artist.get_visible() or isinstance(artist, Legend):
+    if _ignore_artist(axis=axis, artist=artist):
         return 0
 
     if isinstance(artist, Line2D):
@@ -500,6 +642,52 @@ def _artist_badness(
     return badness
 
 
+def _artist_points(
+    *, axis: Axes, artist: Artist, renderer: RendererBase
+) -> list[tuple[float, float]]:
+    points = []
+
+    if _ignore_artist(axis=axis, artist=artist):
+        return points
+
+    if isinstance(artist, Line2D):
+        path = artist.get_transform().transform_path(artist.get_path())
+        points = _path_points(path=path)
+
+    elif isinstance(artist, Rectangle) and artist is not axis.patch:
+        points = _bbox_points(artist.get_window_extent(renderer))
+
+    elif isinstance(artist, PolyCollection):
+        for path in artist.get_paths():
+            transformed_path = artist.get_transform().transform_path(path)
+            points.extend(_path_points(path=transformed_path))
+
+    elif isinstance(artist, Collection):
+        offsets = artist.get_offsets()
+        transformed = artist.get_offset_transform().transform(offsets)
+        points = [
+            (float(x), float(y)) for x, y in transformed if isfinite(x) and isfinite(y)
+        ]
+
+    elif isinstance(artist, Patch) and artist is not axis.patch:
+        path = artist.get_transform().transform_path(artist.get_path())
+        points = _path_points(path=path)
+
+    elif isinstance(artist, AxesImage | Text):
+        points = _bbox_points(artist.get_window_extent(renderer))
+
+    return points
+
+
+def _ignore_artist(*, axis: Axes, artist: Artist) -> bool:
+    return (
+        not artist.get_visible()
+        or isinstance(artist, Legend)
+        or (isinstance(artist, Text) and artist not in axis.texts)
+        or any(artist is spine for spine in axis.spines.values())
+    )
+
+
 def _path_badness(*, legend_box: Bbox, path: Path) -> int:
     badness = legend_box.count_contains(path.vertices)
 
@@ -507,6 +695,59 @@ def _path_badness(*, legend_box: Bbox, path: Path) -> int:
         badness += 1
 
     return badness
+
+
+def _path_points(path: Path) -> list[tuple[float, float]]:
+    points, _ = _path_points_and_segments(path)
+
+    return points
+
+
+def _path_points_and_segments(
+    path: Path,
+) -> tuple[
+    list[tuple[float, float]],
+    list[tuple[tuple[float, float], tuple[float, float]]],
+]:
+    points = []
+    segments = []
+    previous = None
+
+    for vertices, code in path.iter_segments(curves=False, remove_nans=True):
+        if len(vertices) < PATH_VERTEX_LENGTH:
+            continue
+
+        point = (float(vertices[0]), float(vertices[1]))
+
+        if not isfinite(point[0]) or not isfinite(point[1]):
+            previous = None
+            continue
+
+        if code == Path.CLOSEPOLY:
+            previous = None
+            continue
+
+        points.append(point)
+
+        if code == Path.MOVETO:
+            previous = point
+            continue
+
+        if previous is not None:
+            segments.append((previous, point))
+
+        previous = point
+
+    return points, segments
+
+
+def _bbox_points(box: Bbox) -> list[tuple[float, float]]:
+    return [
+        (float(box.x0), float(box.y0)),
+        (float(box.x0), float(box.y1)),
+        (float(box.x1), float(box.y0)),
+        (float(box.x1), float(box.y1)),
+    ]
 
 
 def _poly_collection_badness(
