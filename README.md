@@ -1,6 +1,28 @@
 # figmint
 
-`figmint` is my Matplotlib style collection. I use it to create plots for papers, talks, and meetings.
+`figmint` is my Matplotlib and PGFPlots style collection. I use it to create
+plots for papers, talks, and meetings.
+
+The Python package owns Matplotlib styles. The TeX package owns PGFPlots
+styles and installs as `figmint.sty`.
+
+Install the TeX package into your user TeX tree from the repository root:
+
+```sh
+l3build install
+```
+
+Check that TeX can find the installed package:
+
+```sh
+kpsewhich figmint.sty
+```
+
+To inspect the target files without copying them, run:
+
+```sh
+l3build install --dry-run
+```
 
 ## Preview
 
@@ -33,14 +55,32 @@
 `figmint` deliberately has a small API, making it easy to grasp:
 
 ```python
-from figmint import finish, register_fonts, style
+from figmint import export_table, finish, register_fonts, style
 ```
 
 and that's it.
 
 The `style` function returns Matplotlib rcParams. `finish` is the post-plot helper for rendered-layout decisions that rcParams cannot make, currently grid-snapped legend placement. `register_fonts` is a convenience function to make Matplotlib aware of fonts installed on your computer. It is needed because Matplotlib is notoriously bad with font caches. My workflow is to try using all fonts directly (more on this below), and whenever this fails (you might see something like `findfont: Font family 'Roboto Condensed Light' not found.`), I register the font manually instead of refreshing Matplotlib's unreliable caches and praying.
 
-The API is designed to make it easy to switch between paper and talk/meeting plots. Paper plots are rigid: the background is always white and font families, font sizes, and figure sizes are determined by the conference's formatting instructions. Slides are completely different: one gets complete freedom to choose backgrounds, used font families, and aspect ratios that affect figure sizes, too. Copy-pasting paper plots into such slides just doesn't look right. But one also doesn't want to spend entire afternoons converting paper plots to match the slide styles. This is where the package comes in handy: switching between the supported themes, different fonts, or figure sizes takes seconds. I highly recommend using `figmint` together with `slidemint` which supports the same themes for `beamer`, making them interact seamlessly.
+`export_table` writes experiment results to tab-separated tables for PGFPlots.
+Same-length one-dimensional columns are written directly:
+
+```python
+export_table("paper/data/loss.tsv", x=steps, y=mean, yerr=stderr)
+export_table("paper/data/loss_ci.tsv", x=steps, y=mean, ymin=lower, ymax=upper)
+```
+
+For heatmaps, pass one two-dimensional value column plus one-dimensional `x` and
+`y` coordinates. The value matrix has shape `(len(y), len(x))`:
+
+```python
+export_table("paper/data/heatmap.tsv", x=widths, y=depths, z=values)
+```
+
+The exporter writes data only. Plot type, axes, legends, colors, and layout stay
+in LaTeX through PGFPlots and `figmint.sty`.
+
+The API is designed to make it easy to switch between paper and talk/meeting plots. Paper plots are rigid: the background is always white and font families, font sizes, and figure sizes are determined by the conference's formatting instructions. Slides are completely different: one gets complete freedom to choose backgrounds, used font families, and aspect ratios that affect figure sizes, too. Copy-pasting paper plots into such slides just doesn't look right. But one also doesn't want to spend entire afternoons converting paper plots to match the slide styles. This is where the package comes in handy: switching between the supported themes, different fonts, or figure sizes takes seconds. It composes with slide themes and notation packages through the document that loads it.
 
 ```python
 import matplotlib.pyplot as plt
@@ -107,6 +147,12 @@ Supported themes are:
 - `frappe`
 - `macchiato`
 - `mocha`
+
+The TeX package exposes `FigmintWhite`, `FigmintBlack`, full Catppuccin color
+names such as `FigmintFrappeBlue`, and figure role aliases such as
+`FigmintFrappeBackground` and `FigmintFrappeCycleOne`. The `normal` theme also
+exposes its repaired paper colors as `FigmintNormalBlue`,
+`FigmintNormalPeach`, and so on.
 
 `normal` uses a white background, black text, black edges, a repaired Catppuccin Latte categorical cycle, and Matplotlib's built-in `plasma` colormap for scalar data. Paper figures also use filled legend backgrounds and a low-alpha default grid. The normal categorical cycle keeps the Latte ordering and treats the cycle order as a priority list: earlier colors move only when the constraints force them to move, while later colors absorb more of the repair.
 
@@ -184,3 +230,21 @@ style(
 - `height_to_width_ratio`
 
 `finish(axis)` is called after the plot and legend exist, before `savefig(...)`. For a fixed legend location such as `loc="upper right"`, it lets Matplotlib place the legend, then snaps the legend anchor to the nearest major grid coordinate that keeps the legend inside the axes. For `loc="best"`, it searches fixed legend locations and all column counts from one to the number of legend entries, scores each rendered candidate by data overlap and compactness, and snaps the selected candidate to the same major-grid coordinates.
+
+## Tests
+
+Run the Python tests:
+
+```sh
+make test
+```
+
+Run the TeX tests:
+
+```sh
+l3build check
+```
+
+## License
+
+Apache 2.0.

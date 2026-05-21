@@ -1,0 +1,13 @@
+\figmintset{theme=normal, column=auto}
+\begin{tikzpicture}
+  \begin{axis}[
+    figmint,
+    ymin=0,
+    ymax=1,
+    xtick={0,1,2,3},
+    xticklabels={A,B,C,D},
+    ylabel={Score},
+  ]
+    \addplot+[figmint bar] coordinates {(0,0.62) (1,0.74) (2,0.69) (3,0.81)};
+  \end{axis}
+\end{tikzpicture}

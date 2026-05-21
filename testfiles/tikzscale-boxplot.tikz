@@ -1,0 +1,24 @@
+\figmintset{theme=normal, column=auto}
+\begin{tikzpicture}
+  \begin{axis}[
+    figmint,
+    ymin=0,
+    ymax=1,
+    xtick={1,2,3},
+    xticklabels={A,B,C},
+    ylabel={Score},
+  ]
+    \addplot+[
+      figmint boxplot,
+      boxplot prepared={draw position=1,lower whisker=0.15,lower quartile=0.31,median=0.48,upper quartile=0.66,upper whisker=0.88},
+    ] coordinates {};
+    \addplot+[
+      figmint boxplot,
+      boxplot prepared={draw position=2,lower whisker=0.22,lower quartile=0.40,median=0.57,upper quartile=0.73,upper whisker=0.92},
+    ] coordinates {};
+    \addplot+[
+      figmint boxplot,
+      boxplot prepared={draw position=3,lower whisker=0.10,lower quartile=0.27,median=0.44,upper quartile=0.60,upper whisker=0.82},
+    ] coordinates {};
+  \end{axis}
+\end{tikzpicture}

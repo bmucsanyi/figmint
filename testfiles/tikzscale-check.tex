@@ -1,0 +1,45 @@
+\documentclass[10pt,twocolumn]{article}
+\usepackage{fontspec}
+\setmainfont{TeX Gyre Termes}
+\usepackage[letterpaper,margin=0.75in]{geometry}
+\usepackage{figmint}
+\usepackage{tikzscale}
+
+\makeatletter
+\RenewDocumentCommand{\tikzscale@includeNormalTikzpicture}{m}{%
+  \PackageError{figmint-test}{tikzscale used picture scaling for #1}{Figmint plots must converge through PGFPlots axis sizing.}%
+}
+\makeatother
+
+\newsavebox{\figminttikzscalebox}
+\newlength{\figminttikzscaledelta}
+\newcommand*{\figmintmeasuretikzscale}[3]{%
+  \begin{figure}[!htbp]
+    \centering
+    \sbox{\figminttikzscalebox}{\includegraphics[width=\linewidth,axisratio=#2]{#1}}%
+    \setlength{\figminttikzscaledelta}{\dimexpr\wd\figminttikzscalebox-\linewidth\relax}%
+    \ifdim\figminttikzscaledelta<0pt
+      \setlength{\figminttikzscaledelta}{-\figminttikzscaledelta}%
+    \fi
+    \ifdim\figminttikzscaledelta>\hfuzz
+      \PackageError{figmint-test}{#3 width differs from linewidth}{Tikzscale must fit #3 to linewidth.}%
+    \fi
+    \typeout{FIGMINT_TIKZSCALE_WIDTH name=#3 actual=\the\wd\figminttikzscalebox target=\the\linewidth}%
+    \usebox{\figminttikzscalebox}
+    \caption{Tikzscale check for #3.}
+  \end{figure}
+}
+
+\begin{document}
+\section{Tikzscale Check}
+\suppressfloats[t]
+
+\figmintmeasuretikzscale{testfiles/tikzscale-lines.tikz}{1.724137931034483}{lines}
+\figmintmeasuretikzscale{testfiles/tikzscale-heatmap.tikz}{1.923076923076923}{heatmap}
+\figmintmeasuretikzscale{testfiles/tikzscale-bar.tikz}{2.083333333333333}{bar}
+\figmintmeasuretikzscale{testfiles/tikzscale-boxplot.tikz}{1.923076923076923}{boxplot}
+\figmintmeasuretikzscale{testfiles/tikzscale-filled.tikz}{2.000000000000000}{filled}
+\figmintmeasuretikzscale{testfiles/tikzscale-log.tikz}{2.000000000000000}{log}
+\figmintmeasuretikzscale{testfiles/tikzscale-groupplot.tikz}{2.272727272727273}{groupplot}
+
+\end{document}

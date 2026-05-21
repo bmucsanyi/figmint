@@ -56,10 +56,10 @@ def test_finish_snaps_fixed_legend_location_to_major_grid() -> None:
         legend = axis.get_legend()
         assert legend is not None
         box = legend_box_axes(axis, legend)
-        inset_x, _ = frame_inset_axes(axis, legend)
+        inset_x, inset_y = frame_inset_axes(axis, legend)
 
         assert box.x1 == pytest.approx(1.0 - inset_x)
-        assert box.y1 == pytest.approx(0.8)
+        assert box.y1 == pytest.approx(1.0 - inset_y)
 
         plt.close(figure)
 
@@ -167,10 +167,10 @@ def test_finish_snap_survives_constrained_layout_reflow() -> None:
         legend = axis.get_legend()
         assert legend is not None
         box = legend_box_axes(axis, legend)
-        inset_x, _ = frame_inset_axes(axis, legend)
+        inset_x, inset_y = frame_inset_axes(axis, legend)
 
         assert box.x1 == pytest.approx(1.0 - inset_x)
-        assert box.y1 == pytest.approx(0.8)
+        assert box.y1 == pytest.approx(1.0 - inset_y)
 
         plt.close(figure)
 
@@ -201,6 +201,51 @@ def test_finish_optimizes_fixed_location_column_count() -> None:
         assert box.height < initial_box.height
         assert box.x1 == pytest.approx(1.0 - inset_x)
         assert box.y0 == pytest.approx(inset_y)
+
+        plt.close(figure)
+
+
+def test_finish_snaps_fixed_legend_to_axis_boundary_between_grid_lines() -> None:
+    with plt.rc_context(style("normal", venue="icml")):
+        figure, axis = plt.subplots()
+        axis.set_xlim(0.0, 10.0)
+        axis.set_ylim(0.35, 0.95)
+        axis.set_xticks([2.0, 4.0, 6.0, 8.0])
+        axis.set_yticks([0.4, 0.6, 0.8])
+        axis.plot([0.0, 10.0], [0.7, 0.9], label="baseline")
+        axis.legend(loc="lower right")
+
+        finish(axis)
+        legend = axis.get_legend()
+        assert legend is not None
+        box = legend_box_axes(axis, legend)
+        inset_x, inset_y = frame_inset_axes(axis, legend)
+
+        assert box.x1 == pytest.approx(1.0 - inset_x)
+        assert box.y0 == pytest.approx(inset_y)
+
+        plt.close(figure)
+
+
+def test_finish_prefers_legend_matrices_without_empty_cells() -> None:
+    with plt.rc_context(style("normal", venue="icml")):
+        figure, axis = plt.subplots()
+        xs = [float(index) / 100.0 for index in range(101)]
+        axis.set_xlim(0.0, 1.0)
+        axis.set_ylim(0.0, 1.0)
+        axis.set_xticks([0.0, 0.5, 1.0])
+        axis.set_yticks([0.0, 0.5, 1.0])
+
+        for index in range(3):
+            ys = [0.55 + 0.03 * float(index) + 0.02 * x for x in xs]
+            axis.plot(xs, ys, label=f"run {index + 1}")
+
+        axis.legend(loc="best")
+        finish(axis)
+        legend = axis.get_legend()
+        assert legend is not None
+
+        assert vars(legend)["_ncols"] in {1, 3}
 
         plt.close(figure)
 

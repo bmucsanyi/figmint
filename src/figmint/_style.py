@@ -11,10 +11,17 @@ from figmint._colors import COLOR_THEMES
 
 GOLDEN_RATIO = (5.0**0.5 - 1.0) / 2.0
 PAD_INCHES = 0.015
+FIGURE_SIZE_DIMENSIONS = 2
 
 THEMES = tuple(COLOR_THEMES)
 VENUES = ("iclr", "neurips", "icml")
 VENUE_FONT_SIZES = {
+    "iclr": 9.0,
+    "neurips": 9.0,
+    "icml": 9.0,
+}
+
+VENUE_SECONDARY_FONT_SIZES = {
     "iclr": 9.0,
     "neurips": 9.0,
     "icml": 9.0,
@@ -25,6 +32,7 @@ VENUE_FONTS = {
     "neurips": "Times New Roman",
     "icml": "Times New Roman",
 }
+LATEX_FONT_PREAMBLE = r"\usepackage{fontspec}\setmainfont{TeX Gyre Termes}"
 
 BACKGROUND_COLOR_PARAMS = (
     "axes.facecolor",
@@ -72,8 +80,17 @@ def style(
         width_fraction=width_fraction,
         rows=rows,
         cols=cols,
+        font_size=font_size,
+        figure_size=figure_size,
         line_width=line_width,
         grid_alpha=grid_alpha,
+        height_to_width_ratio=height_to_width_ratio,
+    )
+    resolved_font_size = _resolve_font_size(venue=venue, font_size=font_size)
+    resolved_secondary_font_size = _resolve_secondary_font_size(
+        venue=venue,
+        font_size=font_size,
+        resolved_font_size=resolved_font_size,
     )
 
     return {
@@ -93,7 +110,8 @@ def style(
             font_weight=font_weight,
         ),
         **_font_size_config(
-            font_size=_resolve_font_size(venue=venue, font_size=font_size),
+            font_size=resolved_font_size,
+            secondary_font_size=resolved_secondary_font_size,
         ),
         **_export_config(),
         **_line_config(line_width=line_width),
@@ -106,20 +124,57 @@ def _validate_style_inputs(
     width_fraction: float,
     rows: int,
     cols: int,
+    font_size: float | None,
+    figure_size: tuple[float, float] | None,
     line_width: float,
     grid_alpha: float,
+    height_to_width_ratio: float,
 ) -> None:
     _require_positive(name="width_fraction", value=width_fraction)
-    _require_positive(name="rows", value=rows)
-    _require_positive(name="cols", value=cols)
+    _require_positive_integer(name="rows", value=rows)
+    _require_positive_integer(name="cols", value=cols)
     _require_positive(name="line_width", value=line_width)
     _require_unit_interval(name="grid_alpha", value=grid_alpha)
+    _require_positive(name="height_to_width_ratio", value=height_to_width_ratio)
+
+    if font_size is not None:
+        _require_font_size(font_size=font_size)
+
+    _require_figure_size(figure_size=figure_size)
 
 
 def _require_positive(*, name: str, value: float) -> None:
     if value <= 0:
         msg = f"{name} must be positive."
         raise ValueError(msg)
+
+
+def _require_positive_integer(*, name: str, value: int) -> None:
+    if not isinstance(value, int) or isinstance(value, bool):
+        msg = f"{name} must be a positive integer."
+        raise TypeError(msg)
+
+    if value <= 0:
+        msg = f"{name} must be a positive integer."
+        raise ValueError(msg)
+
+
+def _require_font_size(*, font_size: float) -> None:
+    if font_size <= 1.0:
+        msg = "font_size must be greater than 1.0."
+        raise ValueError(msg)
+
+
+def _require_figure_size(*, figure_size: tuple[float, float] | None) -> None:
+    if figure_size is None:
+        return
+
+    if len(figure_size) != FIGURE_SIZE_DIMENSIONS:
+        msg = "figure_size must contain exactly two dimensions."
+        raise ValueError(msg)
+
+    _require_positive(name="figure_size width", value=figure_size[0])
+    _require_positive(name="figure_size height", value=figure_size[1])
 
 
 def _require_unit_interval(*, name: str, value: float) -> None:
@@ -286,6 +341,22 @@ def _resolve_font_size(*, venue: str, font_size: float | None) -> float:
     raise ValueError(msg)
 
 
+def _resolve_secondary_font_size(
+    *,
+    venue: str,
+    font_size: float | None,
+    resolved_font_size: float,
+) -> float:
+    if font_size is not None:
+        return resolved_font_size - 1.0
+
+    if venue in VENUE_SECONDARY_FONT_SIZES:
+        return VENUE_SECONDARY_FONT_SIZES[venue]
+
+    msg = f"Unknown venue {venue!r}. Expected one of {VENUES!r}."
+    raise ValueError(msg)
+
+
 def _icml_width(*, column: str) -> float:
     if column == "half":
         return 3.25
@@ -400,29 +471,31 @@ def _tex_font(
         "axes.labelweight": font_weight,
         "axes.titleweight": font_weight,
         "text.latex.preamble": preamble,
+        "pgf.texsystem": "lualatex",
+        "pgf.preamble": preamble,
+        "pgf.rcfonts": False,
     }
 
 
 def _latex_preamble(*, venue: str) -> str:
-    if venue == "neurips":
-        return r"\renewcommand{\rmdefault}{ptm}\renewcommand{\sfdefault}{phv}"
-
-    if venue in {"iclr", "icml"}:
-        return r"\usepackage{times}"
+    if venue in VENUES:
+        return LATEX_FONT_PREAMBLE
 
     msg = f"Unknown venue {venue!r}. Expected one of {VENUES!r}."
     raise ValueError(msg)
 
 
-def _font_size_config(*, font_size: float) -> dict[str, object]:
-    small_size = font_size - 1.0
-
+def _font_size_config(
+    *,
+    font_size: float,
+    secondary_font_size: float,
+) -> dict[str, object]:
     return {
         "font.size": font_size,
         "axes.labelsize": font_size,
-        "legend.fontsize": small_size,
-        "xtick.labelsize": small_size,
-        "ytick.labelsize": small_size,
+        "legend.fontsize": secondary_font_size,
+        "xtick.labelsize": secondary_font_size,
+        "ytick.labelsize": secondary_font_size,
         "axes.titlesize": font_size,
     }
 

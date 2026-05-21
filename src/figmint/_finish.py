@@ -372,6 +372,7 @@ def _sorted_unique_unit_values(values: Iterable[float]) -> tuple[float, ...]:
         for value in values
         if -EPSILON <= value <= 1.0 + EPSILON
     }
+    rounded.update((0.0, 1.0))
 
     return tuple(sorted(rounded))
 
@@ -464,19 +465,21 @@ def _candidate_score(
     width_ratio = box.width / axis_box.width
     height_ratio = box.height / axis_box.height
     rows = ceil(entry_count / ncols)
+    empty_cells = ncols * rows - entry_count
     balance = abs(ncols - rows)
     badness = _data_badness(axis=axis, legend_box=box, renderer=renderer)
-    margin = _legend_margin_scale(
+    clearance = _point_data_clearance(axis=axis, legend_box=box, renderer=renderer)
+    margin = _point_margin_scale(
         axis=axis,
         legend_box=box,
         loc=loc,
         renderer=renderer,
         badness=badness,
     )
-    clearance = _point_data_clearance(axis=axis, legend_box=box, renderer=renderer)
 
     return (
         badness,
+        empty_cells,
         balance,
         -_score_float(clearance),
         -_score_float(margin),
@@ -502,7 +505,7 @@ def _score_float(value: float) -> float:
     return round(value, UNIT_ROUND_DIGITS)
 
 
-def _legend_margin_scale(
+def _point_margin_scale(
     *,
     axis: Axes,
     legend_box: Bbox,
@@ -513,38 +516,94 @@ def _legend_margin_scale(
     if badness > 0:
         return 1.0
 
-    low = 1.0
-    high = _axis_cover_scale(
-        axis=axis,
-        box=legend_box,
-        loc=loc,
-        renderer=renderer,
-    )
+    fraction = _anchor_fraction(loc)
+    anchor_x = legend_box.x0 + legend_box.width * fraction[0]
+    anchor_y = legend_box.y0 + legend_box.height * fraction[1]
+    before_x = legend_box.width * fraction[0]
+    after_x = legend_box.width * (1.0 - fraction[0])
+    before_y = legend_box.height * fraction[1]
+    after_y = legend_box.height * (1.0 - fraction[1])
+    scales = []
 
-    if (
-        _data_badness(
-            axis=axis,
-            legend_box=_expanded_box(box=legend_box, loc=loc, scale=high),
-            renderer=renderer,
-        )
-        == 0
+    for artist in axis.get_children():
+        for x, y in _artist_points(axis=axis, artist=artist, renderer=renderer):
+            scale = _point_growth_scale(
+                x=x,
+                y=y,
+                anchor_x=anchor_x,
+                anchor_y=anchor_y,
+                before_x=before_x,
+                after_x=after_x,
+                before_y=before_y,
+                after_y=after_y,
+            )
+
+            if scale is not None and scale > 1.0 + EPSILON:
+                scales.append(scale)
+
+    if not scales:
+        return float("inf")
+
+    margin = min(scales)
+
+    if margin > _axis_cover_scale(
+        axis=axis, box=legend_box, loc=loc, renderer=renderer
     ):
         return float("inf")
 
-    while high - low > EPSILON:
-        middle = 0.5 * (low + high)
+    return margin
 
-        if middle in {low, high}:
-            break
 
-        expanded = _expanded_box(box=legend_box, loc=loc, scale=middle)
+def _point_growth_scale(
+    *,
+    x: float,
+    y: float,
+    anchor_x: float,
+    anchor_y: float,
+    before_x: float,
+    after_x: float,
+    before_y: float,
+    after_y: float,
+) -> float | None:
+    x_scale = _dimension_growth_scale(
+        value=x,
+        anchor=anchor_x,
+        before=before_x,
+        after=after_x,
+    )
+    y_scale = _dimension_growth_scale(
+        value=y,
+        anchor=anchor_y,
+        before=before_y,
+        after=after_y,
+    )
 
-        if _data_badness(axis=axis, legend_box=expanded, renderer=renderer) == 0:
-            low = middle
-        else:
-            high = middle
+    if x_scale is None or y_scale is None:
+        return None
 
-    return low
+    return max(1.0, x_scale, y_scale)
+
+
+def _dimension_growth_scale(
+    *,
+    value: float,
+    anchor: float,
+    before: float,
+    after: float,
+) -> float | None:
+    if value < anchor - EPSILON:
+        if before <= EPSILON:
+            return None
+
+        return (anchor - value) / before
+
+    if value > anchor + EPSILON:
+        if after <= EPSILON:
+            return None
+
+        return (value - anchor) / after
+
+    return 0.0
 
 
 def _axis_cover_scale(
@@ -596,21 +655,6 @@ def _boundary_cover_scale(
         return None
 
     return distance / dimension
-
-
-def _expanded_box(*, box: Bbox, loc: int, scale: float) -> Bbox:
-    fraction = _anchor_fraction(loc)
-    anchor_x = box.x0 + box.width * fraction[0]
-    anchor_y = box.y0 + box.height * fraction[1]
-    width = box.width * scale
-    height = box.height * scale
-
-    return Bbox.from_bounds(
-        anchor_x - width * fraction[0],
-        anchor_y - height * fraction[1],
-        width,
-        height,
-    )
 
 
 def _data_badness(*, axis: Axes, legend_box: Bbox, renderer: RendererBase) -> int:

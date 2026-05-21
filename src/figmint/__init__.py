@@ -2,5 +2,6 @@
 
 from ._finish import finish
 from ._style import register_fonts, style
+from ._table import export_table
 
-__all__ = ["finish", "register_fonts", "style"]
+__all__ = ["export_table", "finish", "register_fonts", "style"]

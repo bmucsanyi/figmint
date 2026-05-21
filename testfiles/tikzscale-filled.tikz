@@ -1,0 +1,18 @@
+\figmintset{theme=normal, column=auto}
+\begin{tikzpicture}
+  \begin{axis}[
+    figmint,
+    xmin=0,
+    xmax=5,
+    ymin=0,
+    ymax=1,
+    xlabel={$x$},
+    ylabel={$f(x)$},
+  ]
+    \addplot+[figmint line,name path=upper,domain=0:5,samples=61] {0.75 * exp(-0.35 * x)};
+    \addplot+[figmint line,name path=lower,domain=0:5,samples=61] {0.45 * exp(-0.35 * x)};
+    \addplot[figmint interval,fill=FigmintNormalCycleTwo] fill between[of=upper and lower];
+    \addplot+[figmint area,fill=FigmintNormalCycleThree,domain=0:5,samples=61]
+      {0.18 + 0.12 * sin(deg(1.6 * x))} \closedcycle;
+  \end{axis}
+\end{tikzpicture}

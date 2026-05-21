@@ -1,0 +1,17 @@
+\figmintset{theme=normal, column=auto, cols=2, rows=1, group horizontal sep=1.0em}
+\begin{tikzpicture}
+  \begin{groupplot}[
+    figmint,
+    figmint group axis,
+    group style={figmint,group size=2 by 1},
+    xmin=0,
+    xmax=4,
+    ymin=0,
+    ymax=1,
+  ]
+    \nextgroupplot[xlabel={$x$},ylabel={$f(x)$}]
+      \addplot+[figmint line,domain=0:4,samples=41] {exp(-0.45*x)};
+    \nextgroupplot[xlabel={$x$}]
+      \addplot+[figmint filled scatter] coordinates {(0,0.18) (1,0.32) (2,0.54) (3,0.64) (4,0.82)};
+  \end{groupplot}
+\end{tikzpicture}

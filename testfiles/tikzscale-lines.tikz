@@ -1,0 +1,20 @@
+\figmintset{theme=normal, column=auto}
+\begin{tikzpicture}
+  \begin{axis}[
+    figmint,
+    xmin=0,
+    xmax=80,
+    ymin=0,
+    ymax=1,
+    xlabel={Step $t$},
+    ylabel={Relative error},
+    figmint legend report=tikzscale-lines,
+  ]
+    \addplot+[figmint line,domain=0:80,samples=81] {0.08 + 0.90 * exp(-0.045 * x)};
+    \addlegendentry{baseline}
+    \addplot+[figmint line marks,domain=0:80,samples=9] {0.06 + 0.92 * exp(-0.07 * x)};
+    \addlegendentry{method}
+    \addplot+[figmint scatter] coordinates {(10,0.62) (20,0.35) (40,0.16) (60,0.10) (80,0.07)};
+    \addlegendentry{runs}
+  \end{axis}
+\end{tikzpicture}

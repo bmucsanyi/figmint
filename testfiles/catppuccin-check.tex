@@ -1,0 +1,90 @@
+\documentclass{article}
+\usepackage[letterpaper,margin=0.55in]{geometry}
+\usepackage{figmint}
+
+\newcommand*{\figmintcheckcolor}[2]{%
+  \convertcolorspec{named}{#1}{HTML}\figmintcheckhex
+  \typeout{FIGMINT_COLOR name=#1;hex=\figmintcheckhex;expected=#2}%
+}
+
+\begin{document}
+
+\figmintcheckcolor{FigmintWhite}{FFFFFF}
+\figmintcheckcolor{FigmintBlack}{000000}
+\figmintcheckcolor{FigmintNormalBlue}{1E66F5}
+\figmintcheckcolor{FigmintNormalPeach}{FD6309}
+\figmintcheckcolor{FigmintNormalCycleOne}{1E66F5}
+\figmintcheckcolor{FigmintNormalCycleTwo}{FD6309}
+\figmintcheckcolor{FigmintNormalCycleThree}{3D7E44}
+\figmintcheckcolor{FigmintNormalGrid}{9CA0B0}
+\figmintcheckcolor{FigmintLatteBase}{EFF1F5}
+\figmintcheckcolor{FigmintLatteBackground}{EFF1F5}
+\figmintcheckcolor{FigmintLatteBlue}{1E66F5}
+\figmintcheckcolor{FigmintLatteCycleOne}{1E66F5}
+\figmintcheckcolor{FigmintFrappeBase}{303446}
+\figmintcheckcolor{FigmintFrappeBackground}{303446}
+\figmintcheckcolor{FigmintFrappeBlue}{8CAAEE}
+\figmintcheckcolor{FigmintFrappeOverlay0}{737994}
+\figmintcheckcolor{FigmintFrappeEdge}{737994}
+\figmintcheckcolor{FigmintFrappeCycleOne}{8CAAEE}
+\figmintcheckcolor{FigmintMacchiatoBlue}{8AADF4}
+\figmintcheckcolor{FigmintMacchiatoCycleOne}{8AADF4}
+\figmintcheckcolor{FigmintMochaBlue}{89B4FA}
+\figmintcheckcolor{FigmintMochaCrust}{11111B}
+\figmintcheckcolor{FigmintMochaCycleOne}{89B4FA}
+\section{Catppuccin Theme Check}
+
+\noindent
+\begin{minipage}[t]{0.48\linewidth}
+  \centering
+  \figmintset{theme=latte, figure width=\linewidth, figure height=0.62\linewidth}
+  \begin{figmintfigure}
+    \begin{axis}[xmin=0,xmax=4,ymin=0,ymax=1,xlabel={$x$},ylabel={$f(x)$}]
+      \addplot+[figmint line,domain=0:4,samples=41] {exp(-0.4*x)};
+      \addplot+[figmint scatter] coordinates {(0,0.92) (1,0.61) (2,0.39) (3,0.26) (4,0.18)};
+    \end{axis}
+  \end{figmintfigure}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.48\linewidth}
+  \centering
+  \figmintset{theme=frappe, figure width=\linewidth, figure height=0.62\linewidth}
+  \begin{figmintfigure}
+    \begin{axis}[figmint heatmap,figmint colorbar,xmin=-0.5,xmax=1.5,ymin=-0.5,ymax=1.5]
+      \addplot+[matrix plot*,mesh/rows=2,mesh/cols=2,point meta=explicit] table[meta=z] {
+        x y z
+        0 0 0.15
+        1 0 0.55
+        0 1 0.35
+        1 1 0.88
+      };
+    \end{axis}
+  \end{figmintfigure}
+\end{minipage}
+
+\vspace{1em}
+
+\noindent
+\begin{minipage}[t]{0.48\linewidth}
+  \centering
+  \figmintset{theme=macchiato, figure width=\linewidth, figure height=0.62\linewidth}
+  \begin{figmintfigure}
+    \begin{axis}[ymin=0,ymax=1,xtick={0,1,2},xticklabels={A,B,C},nodes near coords]
+      \addplot+[figmint bar] coordinates {(0,0.42) (1,0.68) (2,0.76)};
+    \end{axis}
+  \end{figmintfigure}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.48\linewidth}
+  \centering
+  \figmintset{theme=mocha, figure width=\linewidth, figure height=0.62\linewidth}
+  \begin{figmintfigure}
+    \begin{axis}[xmin=0,xmax=5,ymin=0,ymax=1,xlabel={$x$},ylabel={$f(x)$}]
+      \addplot+[figmint line,name path=upper,domain=0:5,samples=51] {0.70*exp(-0.35*x)};
+      \addplot+[figmint line,name path=lower,domain=0:5,samples=51] {0.42*exp(-0.35*x)};
+      \addplot[figmint interval] fill between[of=upper and lower];
+    \end{axis}
+  \end{figmintfigure}
+\end{minipage}
+
+\end{document}

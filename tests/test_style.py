@@ -11,7 +11,7 @@ from matplotlib import colormaps, font_manager
 from matplotlib.colors import LinearSegmentedColormap, to_hex, to_rgb
 
 import figmint
-from figmint import finish, register_fonts, style
+from figmint import export_table, finish, register_fonts, style
 from figmint._colors import (
     CATPPUCCIN_THEMES,
     COLOR_THEMES,
@@ -22,6 +22,14 @@ from figmint._colors import (
 
 def value(config: dict[str, object], key: str) -> Any:
     return config[key]
+
+
+def style_with_rows(rows: Any) -> dict[str, object]:
+    return style("normal", venue="icml", rows=rows)
+
+
+def style_with_cols(cols: Any) -> dict[str, object]:
+    return style("normal", venue="icml", cols=cols)
 
 
 def luminance(color: str) -> float:
@@ -356,7 +364,8 @@ CVD_MATRICES = {
 
 
 def test_public_api_exposes_style_and_font_registration() -> None:
-    assert figmint.__all__ == ["finish", "register_fonts", "style"]
+    assert figmint.__all__ == ["export_table", "finish", "register_fonts", "style"]
+    assert figmint.export_table is export_table
     assert figmint.finish is finish
     assert not hasattr(figmint, "paper")
     assert not hasattr(figmint, "slides")
@@ -409,9 +418,9 @@ def test_default_theme_is_publication_style() -> None:
     assert value(config, "font.size") == pytest.approx(9.0)
     assert value(config, "axes.labelsize") == pytest.approx(9.0)
     assert value(config, "axes.titlesize") == pytest.approx(9.0)
-    assert value(config, "legend.fontsize") == pytest.approx(8.0)
-    assert value(config, "xtick.labelsize") == pytest.approx(8.0)
-    assert value(config, "ytick.labelsize") == pytest.approx(8.0)
+    assert value(config, "legend.fontsize") == pytest.approx(9.0)
+    assert value(config, "xtick.labelsize") == pytest.approx(9.0)
+    assert value(config, "ytick.labelsize") == pytest.approx(9.0)
     assert value(config, "pdf.fonttype") == 42
     assert value(config, "ps.fonttype") == 42
     assert value(config, "svg.fonttype") == "none"
@@ -619,12 +628,18 @@ def test_venue_layout_defaults_match_publication_layout() -> None:
 
 
 @pytest.mark.parametrize(
-    ("venue", "column", "expected_width", "expected_font_size"),
+    (
+        "venue",
+        "column",
+        "expected_width",
+        "expected_font_size",
+        "expected_secondary_font_size",
+    ),
     [
-        ("icml", "half", 3.25, 9.0),
-        ("icml", "full", 6.75, 9.0),
-        ("iclr", "full", 5.5, 9.0),
-        ("neurips", "full", 5.5, 9.0),
+        ("icml", "half", 3.25, 9.0, 9.0),
+        ("icml", "full", 6.75, 9.0, 9.0),
+        ("iclr", "full", 5.5, 9.0, 9.0),
+        ("neurips", "full", 5.5, 9.0, 9.0),
     ],
 )
 def test_conference_defaults_apply_without_size_overrides(
@@ -632,6 +647,7 @@ def test_conference_defaults_apply_without_size_overrides(
     column: str,
     expected_width: float,
     expected_font_size: float,
+    expected_secondary_font_size: float,
 ) -> None:
     golden_ratio = (5.0**0.5 - 1.0) / 2.0
     config = style("normal", venue=venue, column=column)
@@ -642,9 +658,15 @@ def test_conference_defaults_apply_without_size_overrides(
     assert value(config, "font.family") == "Times New Roman"
     assert value(config, "axes.labelsize") == pytest.approx(expected_font_size)
     assert value(config, "axes.titlesize") == pytest.approx(expected_font_size)
-    assert value(config, "legend.fontsize") == pytest.approx(expected_font_size - 1.0)
-    assert value(config, "xtick.labelsize") == pytest.approx(expected_font_size - 1.0)
-    assert value(config, "ytick.labelsize") == pytest.approx(expected_font_size - 1.0)
+    assert value(config, "legend.fontsize") == pytest.approx(
+        expected_secondary_font_size
+    )
+    assert value(config, "xtick.labelsize") == pytest.approx(
+        expected_secondary_font_size
+    )
+    assert value(config, "ytick.labelsize") == pytest.approx(
+        expected_secondary_font_size
+    )
     assert figure_size[0] == expected_width
     assert figure_size[1] == pytest.approx(expected_width * golden_ratio)
 
@@ -667,6 +689,9 @@ def test_explicit_overrides_are_applied() -> None:
     assert value(config, "font.weight") == "light"
     assert value(config, "axes.labelweight") == "light"
     assert value(config, "font.size") == pytest.approx(13.0)
+    assert value(config, "legend.fontsize") == pytest.approx(12.0)
+    assert value(config, "xtick.labelsize") == pytest.approx(12.0)
+    assert value(config, "ytick.labelsize") == pytest.approx(12.0)
     assert value(config, "figure.figsize") == (7.0, 3.5)
     assert value(config, "axes.linewidth") == pytest.approx(0.8)
     assert value(config, "lines.markeredgewidth") == pytest.approx(0.8)
@@ -675,21 +700,56 @@ def test_explicit_overrides_are_applied() -> None:
 
 
 @pytest.mark.parametrize(
-    ("call", "message"),
+    ("call", "expected_exception", "message"),
     [
-        (lambda: style("normal", venue="icml", width_fraction=0.0), "width_fraction"),
-        (lambda: style("normal", venue="icml", rows=0), "rows"),
-        (lambda: style("normal", venue="icml", cols=0), "cols"),
-        (lambda: style("normal", venue="icml", line_width=0.0), "line_width"),
-        (lambda: style("normal", venue="icml", grid_alpha=-0.1), "grid_alpha"),
-        (lambda: style("normal", venue="icml", grid_alpha=1.1), "grid_alpha"),
+        (
+            lambda: style("normal", venue="icml", width_fraction=0.0),
+            ValueError,
+            "width_fraction",
+        ),
+        (lambda: style("normal", venue="icml", rows=0), ValueError, "rows"),
+        (lambda: style_with_rows(1.5), TypeError, "rows"),
+        (lambda: style("normal", venue="icml", cols=0), ValueError, "cols"),
+        (lambda: style_with_cols(1.5), TypeError, "cols"),
+        (lambda: style("normal", venue="icml", font_size=1.0), ValueError, "font_size"),
+        (
+            lambda: style("normal", venue="icml", figure_size=(0.0, 2.0)),
+            ValueError,
+            "figure_size width",
+        ),
+        (
+            lambda: style("normal", venue="icml", figure_size=(4.0, -1.0)),
+            ValueError,
+            "figure_size height",
+        ),
+        (
+            lambda: style("normal", venue="icml", height_to_width_ratio=0.0),
+            ValueError,
+            "height_to_width_ratio",
+        ),
+        (
+            lambda: style("normal", venue="icml", line_width=0.0),
+            ValueError,
+            "line_width",
+        ),
+        (
+            lambda: style("normal", venue="icml", grid_alpha=-0.1),
+            ValueError,
+            "grid_alpha",
+        ),
+        (
+            lambda: style("normal", venue="icml", grid_alpha=1.1),
+            ValueError,
+            "grid_alpha",
+        ),
     ],
 )
 def test_invalid_numeric_style_inputs_fail_loudly(
     call: Callable[[], None],
+    expected_exception: type[Exception],
     message: str,
 ) -> None:
-    with pytest.raises(ValueError, match=message):
+    with pytest.raises(expected_exception, match=message):
         call()
 
 
@@ -737,7 +797,14 @@ def test_usetex_uses_conference_font() -> None:
 
     assert value(config, "text.usetex") is True
     assert value(config, "font.family") == "Times New Roman"
-    assert value(config, "text.latex.preamble") == r"\usepackage{times}"
+    assert value(config, "text.latex.preamble") == (
+        r"\usepackage{fontspec}\setmainfont{TeX Gyre Termes}"
+    )
+    assert value(config, "pgf.texsystem") == "lualatex"
+    assert value(config, "pgf.preamble") == (
+        r"\usepackage{fontspec}\setmainfont{TeX Gyre Termes}"
+    )
+    assert value(config, "pgf.rcfonts") is False
 
 
 def test_usetex_rejects_custom_font() -> None:
