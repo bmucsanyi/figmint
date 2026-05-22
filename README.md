@@ -18,12 +18,6 @@ Check that TeX can find the installed package:
 kpsewhich figmint.sty
 ```
 
-To inspect the target files without copying them, run:
-
-```sh
-l3build install --dry-run
-```
-
 ## Preview
 
 `normal`
