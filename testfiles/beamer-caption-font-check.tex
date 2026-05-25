@@ -1,0 +1,23 @@
+\documentclass[notheorems]{beamer}
+\usepackage{figmint}
+
+\makeatletter
+\newcommand*{\figmintprintfontsize}[2]{%
+  \begingroup
+    #2%
+    \typeout{FIGMINT_FONT name=#1;size=\f@size}%
+  \endgroup
+}
+\makeatother
+
+\begin{document}
+
+\figmintprintfontsize{caption}{\usebeamerfont{caption}}
+\figmintprintfontsize{primary}{\figmintprimaryfont}
+\figmintprintfontsize{secondary}{\figmintsecondaryfont}
+
+\begin{frame}
+  Beamer caption font check.
+\end{frame}
+
+\end{document}

@@ -9,8 +9,20 @@ checkengines = { "luatex" }
 
 local tests = {
   "catppuccin-check",
+  "caption-font-check",
+  "beamer-caption-font-check",
   "tikzscale-check",
   "legend-optimizer-check",
+}
+
+local engine_neutral_tests = {
+  "engine-neutral-check",
+}
+
+local engines = {
+  "lualatex",
+  "xelatex",
+  "pdflatex",
 }
 
 local log_needles = {
@@ -102,6 +114,26 @@ local function compile_test(name)
   return run("lualatex " .. name, command)
 end
 
+local function compile_engine_test(name, engine_name)
+  local texinputs = table.concat({
+    "./tex/latex/figmint",
+    "",
+  }, ":")
+  local command = "env TEXINPUTS=" .. quote(texinputs)
+    .. " TEXMFVAR=" .. quote("build/texmf-var")
+    .. " TEXMFCACHE=" .. quote("build/texmf-var")
+    .. " " .. engine_name
+    .. " -halt-on-error -interaction=nonstopmode"
+    .. " -jobname=" .. quote(name .. "-" .. engine_name)
+    .. " -output-directory=build"
+    .. " " .. quote("testfiles/" .. name .. ".tex")
+
+  if run(engine_name .. " " .. name, command) ~= 0 then
+    return 1
+  end
+  return run(engine_name .. " " .. name, command)
+end
+
 local function compile_error_test()
   local texinputs = table.concat({
     "./tex/latex/figmint",
@@ -132,6 +164,12 @@ local function output_checks()
     { "build/catppuccin-check.log", "FIGMINT_COLOR name=FigmintWhite;hex=FFFFFF;expected=FFFFFF" },
     { "build/catppuccin-check.log", "FIGMINT_COLOR name=FigmintFrappeEdge;hex=737994;expected=737994" },
     { "build/catppuccin-check.log", "FIGMINT_COLOR name=FigmintMochaCrust;hex=11111B;expected=11111B" },
+    { "build/caption-font-check.log", "FIGMINT_FONT name=caption;size=9" },
+    { "build/caption-font-check.log", "FIGMINT_FONT name=primary;size=9" },
+    { "build/caption-font-check.log", "FIGMINT_FONT name=secondary;size=9" },
+    { "build/beamer-caption-font-check.log", "FIGMINT_FONT name=caption;size=10" },
+    { "build/beamer-caption-font-check.log", "FIGMINT_FONT name=primary;size=10" },
+    { "build/beamer-caption-font-check.log", "FIGMINT_FONT name=secondary;size=10" },
     { "build/legend-optimizer-check.log", "FIGMINT_LEGEND name=auto-matrix;mode=best;" },
     { "build/legend-optimizer-check.log", "FIGMINT_LEGEND name=ybar;mode=best;" },
   }
@@ -156,6 +194,14 @@ local function figmint_check()
     end
   end
 
+  for _, name in ipairs(engines) do
+    for _, test in ipairs(engine_neutral_tests) do
+      if compile_engine_test(test, name) ~= 0 then
+        return 1
+      end
+    end
+  end
+
   if compile_error_test() ~= 0 then
     return 1
   end
@@ -167,6 +213,14 @@ local function figmint_check()
   for _, test in ipairs(tests) do
     if scan_log("build/" .. test .. ".log") ~= 0 then
       return 1
+    end
+  end
+
+  for _, name in ipairs(engines) do
+    for _, test in ipairs(engine_neutral_tests) do
+      if scan_log("build/" .. test .. "-" .. name .. ".log") ~= 0 then
+        return 1
+      end
     end
   end
 

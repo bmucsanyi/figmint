@@ -1,0 +1,21 @@
+\documentclass{article}
+\usepackage{figmint}
+
+\begin{document}
+
+\figmintset{theme=normal, figure width=3in, figure height=2in}
+\begin{figmintfigure}
+  \begin{axis}[
+    figmint,
+    xmin=0,
+    xmax=1,
+    ymin=0,
+    ymax=1,
+    xlabel={$x$},
+    ylabel={$f(x)$},
+  ]
+    \addplot+[figmint line] coordinates {(0,0) (1,1)};
+  \end{axis}
+\end{figmintfigure}
+
+\end{document}

@@ -279,8 +279,18 @@
 \newcommand*{\figmintaxisheight}{0.6180339887498948\linewidth}
 \newcommand*{\figmintbackgroundcolor}{FigmintNormalBackground}
 \newcommand*{\figmintcycleonecolor}{FigmintNormalCycleOne}
-\newcommand*{\figmintprimaryfont}{\small}
-\newcommand*{\figmintsecondaryfont}{\footnotesize}
+\newcommand*{\figmintcaptionfont}{%
+    \normalfont\normalsize
+    \@ifclassloaded{beamer}{%
+        \usebeamerfont{caption}%
+    }{%
+        \ifcsdef{captionfont}{\captionfont}{}%
+        \ifcsdef{captionsize}{\captionsize}{}%
+        \ifcsdef{captiontextfont}{\captiontextfont}{}%
+    }%
+}
+\newcommand*{\figmintprimaryfont}{\figmintcaptionfont}
+\newcommand*{\figmintsecondaryfont}{\figmintcaptionfont}
 \newcommand*{\figmintaxislinewidth}{.5pt}
 \newcommand*{\figmintminorlinewidth}{.25pt}
 \newcommand*{\figmintplotlinewidth}{1pt}

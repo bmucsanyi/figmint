@@ -15,15 +15,9 @@ FIGURE_SIZE_DIMENSIONS = 2
 
 THEMES = tuple(COLOR_THEMES)
 VENUES = ("iclr", "neurips", "icml")
-VENUE_FONT_SIZES = {
-    "iclr": 9.0,
-    "neurips": 9.0,
-    "icml": 9.0,
-}
-
-VENUE_SECONDARY_FONT_SIZES = {
-    "iclr": 9.0,
-    "neurips": 9.0,
+VENUE_CAPTION_FONT_SIZES = {
+    "iclr": 10.0,
+    "neurips": 10.0,
     "icml": 9.0,
 }
 
@@ -86,12 +80,7 @@ def style(
         grid_alpha=grid_alpha,
         height_to_width_ratio=height_to_width_ratio,
     )
-    resolved_font_size = _resolve_font_size(venue=venue, font_size=font_size)
-    resolved_secondary_font_size = _resolve_secondary_font_size(
-        venue=venue,
-        font_size=font_size,
-        resolved_font_size=resolved_font_size,
-    )
+    resolved_font_size = _resolve_figure_text_size(venue=venue, font_size=font_size)
 
     return {
         **_layout(
@@ -111,7 +100,6 @@ def style(
         ),
         **_font_size_config(
             font_size=resolved_font_size,
-            secondary_font_size=resolved_secondary_font_size,
         ),
         **_export_config(),
         **_line_config(line_width=line_width),
@@ -330,28 +318,12 @@ def _base_width(*, venue: str, column: str) -> float:
     raise ValueError(msg)
 
 
-def _resolve_font_size(*, venue: str, font_size: float | None) -> float:
+def _resolve_figure_text_size(*, venue: str, font_size: float | None) -> float:
     if font_size is not None:
         return font_size
 
-    if venue in VENUE_FONT_SIZES:
-        return VENUE_FONT_SIZES[venue]
-
-    msg = f"Unknown venue {venue!r}. Expected one of {VENUES!r}."
-    raise ValueError(msg)
-
-
-def _resolve_secondary_font_size(
-    *,
-    venue: str,
-    font_size: float | None,
-    resolved_font_size: float,
-) -> float:
-    if font_size is not None:
-        return resolved_font_size - 1.0
-
-    if venue in VENUE_SECONDARY_FONT_SIZES:
-        return VENUE_SECONDARY_FONT_SIZES[venue]
+    if venue in VENUE_CAPTION_FONT_SIZES:
+        return VENUE_CAPTION_FONT_SIZES[venue]
 
     msg = f"Unknown venue {venue!r}. Expected one of {VENUES!r}."
     raise ValueError(msg)
@@ -488,14 +460,13 @@ def _latex_preamble(*, venue: str) -> str:
 def _font_size_config(
     *,
     font_size: float,
-    secondary_font_size: float,
 ) -> dict[str, object]:
     return {
         "font.size": font_size,
         "axes.labelsize": font_size,
-        "legend.fontsize": secondary_font_size,
-        "xtick.labelsize": secondary_font_size,
-        "ytick.labelsize": secondary_font_size,
+        "legend.fontsize": font_size,
+        "xtick.labelsize": font_size,
+        "ytick.labelsize": font_size,
         "axes.titlesize": font_size,
     }
 

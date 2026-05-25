@@ -1,0 +1,22 @@
+\documentclass[10pt]{article}
+\usepackage[font=small]{caption}
+\usepackage{figmint}
+
+\makeatletter
+\newcommand*{\figmintprintfontsize}[2]{%
+  \begingroup
+    #2%
+    \typeout{FIGMINT_FONT name=#1;size=\f@size}%
+  \endgroup
+}
+\makeatother
+
+\begin{document}
+
+\figmintprintfontsize{caption}{\captionfont}
+\figmintprintfontsize{primary}{\figmintprimaryfont}
+\figmintprintfontsize{secondary}{\figmintsecondaryfont}
+
+Caption font check.
+
+\end{document}

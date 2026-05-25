@@ -632,41 +632,33 @@ def test_venue_layout_defaults_match_publication_layout() -> None:
         "venue",
         "column",
         "expected_width",
-        "expected_font_size",
-        "expected_secondary_font_size",
+        "expected_caption_font_size",
     ),
     [
-        ("icml", "half", 3.25, 9.0, 9.0),
-        ("icml", "full", 6.75, 9.0, 9.0),
-        ("iclr", "full", 5.5, 9.0, 9.0),
-        ("neurips", "full", 5.5, 9.0, 9.0),
+        ("icml", "half", 3.25, 9.0),
+        ("icml", "full", 6.75, 9.0),
+        ("iclr", "full", 5.5, 10.0),
+        ("neurips", "full", 5.5, 10.0),
     ],
 )
-def test_conference_defaults_apply_without_size_overrides(
+def test_conference_presets_use_caption_font_size(
     venue: str,
     column: str,
     expected_width: float,
-    expected_font_size: float,
-    expected_secondary_font_size: float,
+    expected_caption_font_size: float,
 ) -> None:
     golden_ratio = (5.0**0.5 - 1.0) / 2.0
     config = style("normal", venue=venue, column=column)
 
     figure_size = value(config, "figure.figsize")
 
-    assert value(config, "font.size") == expected_font_size
+    assert value(config, "font.size") == expected_caption_font_size
     assert value(config, "font.family") == "Times New Roman"
-    assert value(config, "axes.labelsize") == pytest.approx(expected_font_size)
-    assert value(config, "axes.titlesize") == pytest.approx(expected_font_size)
-    assert value(config, "legend.fontsize") == pytest.approx(
-        expected_secondary_font_size
-    )
-    assert value(config, "xtick.labelsize") == pytest.approx(
-        expected_secondary_font_size
-    )
-    assert value(config, "ytick.labelsize") == pytest.approx(
-        expected_secondary_font_size
-    )
+    assert value(config, "axes.labelsize") == pytest.approx(expected_caption_font_size)
+    assert value(config, "axes.titlesize") == pytest.approx(expected_caption_font_size)
+    assert value(config, "legend.fontsize") == pytest.approx(expected_caption_font_size)
+    assert value(config, "xtick.labelsize") == pytest.approx(expected_caption_font_size)
+    assert value(config, "ytick.labelsize") == pytest.approx(expected_caption_font_size)
     assert figure_size[0] == expected_width
     assert figure_size[1] == pytest.approx(expected_width * golden_ratio)
 
@@ -689,9 +681,9 @@ def test_explicit_overrides_are_applied() -> None:
     assert value(config, "font.weight") == "light"
     assert value(config, "axes.labelweight") == "light"
     assert value(config, "font.size") == pytest.approx(13.0)
-    assert value(config, "legend.fontsize") == pytest.approx(12.0)
-    assert value(config, "xtick.labelsize") == pytest.approx(12.0)
-    assert value(config, "ytick.labelsize") == pytest.approx(12.0)
+    assert value(config, "legend.fontsize") == pytest.approx(13.0)
+    assert value(config, "xtick.labelsize") == pytest.approx(13.0)
+    assert value(config, "ytick.labelsize") == pytest.approx(13.0)
     assert value(config, "figure.figsize") == (7.0, 3.5)
     assert value(config, "axes.linewidth") == pytest.approx(0.8)
     assert value(config, "lines.markeredgewidth") == pytest.approx(0.8)
@@ -762,7 +754,7 @@ def test_explicit_figure_size_does_not_require_column_preset() -> None:
     )
 
     assert value(config, "figure.figsize") == (4.0, 2.0)
-    assert value(config, "font.size") == pytest.approx(9.0)
+    assert value(config, "font.size") == pytest.approx(10.0)
 
 
 def test_register_fonts_adds_font_files() -> None:
