@@ -8,7 +8,7 @@ class ColorTheme(TypedDict):
     text: str
     edge: str
     cycle: tuple[str, ...]
-    colormap: str | tuple[str, ...]
+    colormap: str
 
 
 REPAIRED_LATTE_CYCLE = (
@@ -27,26 +27,10 @@ REPAIRED_LATTE_CYCLE = (
 
 THEME_COLORMAPS = {
     "normal": "plasma",
-    "latte": (
-        "#eff1f5",
-        "#1e66f5",
-        "#4c4f69",
-    ),
-    "frappe": (
-        "#303446",
-        "#8caaee",
-        "#c6d0f5",
-    ),
-    "macchiato": (
-        "#24273a",
-        "#8aadf4",
-        "#cad3f5",
-    ),
-    "mocha": (
-        "#1e1e2e",
-        "#89b4fa",
-        "#cdd6f4",
-    ),
+    "latte": "plasma",
+    "frappe": "plasma",
+    "macchiato": "plasma",
+    "mocha": "plasma",
 }
 
 

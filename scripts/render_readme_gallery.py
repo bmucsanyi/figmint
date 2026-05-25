@@ -62,7 +62,7 @@ def _save_talk_preview(*, output_dir: Path) -> None:
         style(
             "frappe",
             venue="icml",
-            font=SLIDE_FONT,
+            text_font=SLIDE_FONT,
             font_weight="light",
             font_size=13.0,
             figure_size=TALK_FIGURE_SIZE,

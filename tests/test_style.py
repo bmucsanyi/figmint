@@ -1,14 +1,14 @@
 """Tests for the public matplotlib style API."""
 
 from collections.abc import Callable
-from itertools import combinations, pairwise
+from itertools import combinations
 from math import atan2, cos, degrees, exp, radians, sin, sqrt
-from typing import Any
+from typing import Any, Literal
 
 import matplotlib.pyplot as plt
 import pytest
-from matplotlib import colormaps, font_manager
-from matplotlib.colors import LinearSegmentedColormap, to_hex, to_rgb
+from matplotlib import font_manager
+from matplotlib.colors import to_hex, to_rgb
 
 import figmint
 from figmint import export_table, finish, register_fonts, style
@@ -32,10 +32,16 @@ def style_with_cols(cols: Any) -> dict[str, object]:
     return style("normal", venue="icml", cols=cols)
 
 
-def luminance(color: str) -> float:
-    red, green, blue = to_rgb(color)
+def style_with_backend(backend: Any) -> dict[str, object]:
+    return style("normal", venue="icml", backend=backend)
 
-    return 0.2126 * red + 0.7152 * green + 0.0722 * blue
+
+def style_with_tex_compiler(tex_compiler: Any) -> dict[str, object]:
+    return style("normal", venue="icml", backend="pgf", tex_compiler=tex_compiler)
+
+
+def style_with_math_font(math_font: Any) -> dict[str, object]:
+    return style("normal", venue="icml", backend="pgf", math_font=math_font)
 
 
 def linearized_rgb_channel(value: float) -> float:
@@ -281,14 +287,9 @@ def count_unchanged_latte_prefix(colors: tuple[str, ...]) -> int:
 
 
 def colormap_colors(theme: str) -> list[str]:
-    colormap = COLOR_THEMES[theme]["colormap"]
+    sampled = plt.get_cmap(COLOR_THEMES[theme]["colormap"])
 
-    if isinstance(colormap, str):
-        sampled = plt.get_cmap(colormap)
-
-        return [to_hex(sampled(index / 255.0)) for index in range(256)]
-
-    return list(colormap)
+    return [to_hex(sampled(index / 255.0)) for index in range(256)]
 
 
 CATPPUCCIN_CYCLES = {
@@ -389,6 +390,11 @@ def test_color_tables_only_contain_style_roles() -> None:
 def test_default_theme_is_publication_style() -> None:
     config = style(venue="icml", column="half")
 
+    assert "backend" not in config
+    assert "pgf.texsystem" not in config
+    assert "pgf.preamble" not in config
+    assert "pgf.rcfonts" not in config
+    assert "mathtext.fontset" not in config
     assert value(config, "figure.facecolor") == "#ffffff"
     assert value(config, "axes.facecolor") == "#ffffff"
     assert value(config, "savefig.facecolor") == "#ffffff"
@@ -464,7 +470,7 @@ def test_theme_backgrounds_and_text(
     assert value(config, "axes.spines.top") is False
     assert value(config, "axes.spines.right") is False
     assert value(config, "patch.edgecolor") == edge
-    assert value(config, "image.cmap") == f"figmint_{theme}"
+    assert value(config, "image.cmap") == "plasma"
     assert value(config, "savefig.transparent") is False
 
 
@@ -504,17 +510,17 @@ def test_normal_grid_matches_latte_grid() -> None:
 
 
 @pytest.mark.parametrize("theme", ["latte", "frappe", "macchiato", "mocha"])
-def test_colormaps_are_exact(theme: str) -> None:
+def test_themed_colormaps_are_plasma(theme: str) -> None:
     config = style(theme, venue="icml")
 
-    assert value(config, "image.cmap") == f"figmint_{theme}"
+    assert value(config, "image.cmap") == "plasma"
 
     with plt.rc_context(config):
         colormap = plt.get_cmap()
 
-    assert colormap.name == f"figmint_{theme}"
-    assert to_hex(colormap(0.0)) == THEME_COLORMAPS[theme][0]
-    assert to_hex(colormap(1.0)) == THEME_COLORMAPS[theme][-1]
+    assert colormap.name == "plasma"
+    assert COLOR_THEMES[theme]["colormap"] == "plasma"
+    assert THEME_COLORMAPS[theme] == "plasma"
 
 
 def test_normal_colormap_is_plasma() -> None:
@@ -529,35 +535,12 @@ def test_normal_colormap_is_plasma() -> None:
     assert COLOR_THEMES["normal"]["colormap"] == "plasma"
 
 
-def test_owned_colormap_registration_overwrites_stale_entries() -> None:
-    style("latte", venue="icml")
-    stale_colormap = LinearSegmentedColormap.from_list(
-        "figmint_latte",
-        ("#ffffff", "#000000"),
-    )
-
-    with pytest.warns(UserWarning, match="Overwriting the cmap"):
-        colormaps.register(stale_colormap, name="figmint_latte", force=True)
-
-    with pytest.warns(UserWarning, match="Overwriting the cmap"):
-        config = style("latte", venue="icml")
-
-    with plt.rc_context(config):
-        colormap = plt.get_cmap()
-
-    assert colormap.name == "figmint_latte"
-    assert to_hex(colormap(0.0)) == THEME_COLORMAPS["latte"][0]
-    assert to_hex(colormap(1.0)) == THEME_COLORMAPS["latte"][-1]
-
-
 @pytest.mark.parametrize("theme", ["latte", "frappe", "macchiato", "mocha"])
-def test_colormaps_have_ordered_luminance(theme: str) -> None:
-    color_luminances = [luminance(color) for color in colormap_colors(theme)]
-    pairs = tuple(pairwise(color_luminances))
-    increasing = all(left <= right for left, right in pairs)
-    decreasing = all(left >= right for left, right in pairs)
+def test_themed_colormap_samples_match_plasma(theme: str) -> None:
+    plasma = plt.get_cmap("plasma")
+    plasma_colors = [to_hex(plasma(index / 255.0)) for index in range(256)]
 
-    assert increasing or decreasing
+    assert colormap_colors(theme) == plasma_colors
 
 
 @pytest.mark.parametrize("theme", ["normal", "latte", "frappe", "macchiato", "mocha"])
@@ -569,6 +552,120 @@ def test_style_updates_matplotlib_rcparams(theme: str, venue: str) -> None:
 
     with plt.rc_context(config):
         pass
+
+
+def test_pgf_backend_sets_pgf_rcparams() -> None:
+    config = style("normal", venue="icml", backend="pgf")
+
+    assert value(config, "backend") == "pgf"
+    assert value(config, "pgf.texsystem") == "pdflatex"
+    assert value(config, "pgf.preamble") == r"\usepackage{times}"
+    assert value(config, "pgf.rcfonts") is False
+    assert value(config, "text.usetex") is False
+    assert value(config, "font.family") == "serif"
+
+
+def test_pgf_backend_accepts_tex_compiler_and_preamble() -> None:
+    config = style(
+        "normal",
+        venue="icml",
+        backend="pgf",
+        tex_compiler="lualatex",
+        pgf_preamble=r"\usepackage{amsmath}",
+    )
+
+    assert value(config, "backend") == "pgf"
+    assert value(config, "pgf.texsystem") == "lualatex"
+    assert value(config, "pgf.preamble") == r"\usepackage{amsmath}"
+    assert value(config, "pgf.rcfonts") is False
+
+
+@pytest.mark.parametrize(
+    ("venue", "expected_preamble"),
+    [
+        ("iclr", r"\usepackage{times}"),
+        ("icml", r"\usepackage{times}"),
+        (
+            "neurips",
+            (
+                r"\renewcommand{\rmdefault}{ptm}"
+                "\n"
+                r"\renewcommand{\sfdefault}{phv}"
+            ),
+        ),
+    ],
+)
+def test_pgf_backend_uses_venue_text_setup(
+    venue: str,
+    expected_preamble: str,
+) -> None:
+    config = style("normal", venue=venue, backend="pgf")
+
+    assert value(config, "pgf.preamble") == expected_preamble
+    assert value(config, "pgf.rcfonts") is False
+
+
+def test_pgf_backend_uses_custom_text_font_with_unicode_compiler() -> None:
+    config = style(
+        "normal",
+        venue="icml",
+        backend="pgf",
+        tex_compiler="lualatex",
+        text_font="Roboto Condensed",
+    )
+
+    assert value(config, "pgf.preamble") == (
+        r"\usepackage{fontspec}"
+        "\n"
+        r"\setmainfont{Roboto Condensed}"
+    )
+    assert value(config, "pgf.rcfonts") is False
+
+
+@pytest.mark.parametrize(
+    ("tex_compiler", "expected_math_setup"),
+    [
+        ("pdflatex", r"\usepackage[notext]{stix2}"),
+        (
+            "xelatex",
+            (
+                r"\usepackage{unicode-math}"
+                "\n"
+                r"\setmathfont{STIX Two Math}"
+            ),
+        ),
+        (
+            "lualatex",
+            (
+                r"\usepackage{unicode-math}"
+                "\n"
+                r"\setmathfont{STIX Two Math}"
+            ),
+        ),
+    ],
+)
+def test_pgf_backend_builds_stix_math_preamble(
+    tex_compiler: Literal["pdflatex", "xelatex", "lualatex"],
+    expected_math_setup: str,
+) -> None:
+    config = style(
+        "normal",
+        venue="icml",
+        backend="pgf",
+        tex_compiler=tex_compiler,
+        math_font="stix",
+    )
+
+    assert value(config, "pgf.preamble") == (
+        rf"\usepackage{{times}}"
+        f"\n{expected_math_setup}"
+    )
+
+
+def test_native_backend_uses_stix_mathtext_when_requested() -> None:
+    config = style("normal", venue="icml", math_font="stix")
+
+    assert value(config, "mathtext.fontset") == "stix"
 
 
 @pytest.mark.parametrize(
@@ -600,6 +697,56 @@ def test_dark_figures_render_with_theme_background(
         (lambda: style("normal", venue="unknown"), "Unknown venue"),
         (lambda: style("normal", venue="ICML"), "Unknown venue"),
         (lambda: style("normal", venue="iclr", column="half"), "styles require"),
+        (lambda: style_with_backend("unknown"), "Unknown backend"),
+        (lambda: style_with_tex_compiler("latex"), "Unknown tex_compiler"),
+        (lambda: style_with_math_font("cambria"), "Unknown math_font"),
+        (
+            lambda: style(
+                "normal",
+                venue="icml",
+                backend="matplotlib",
+                tex_compiler="lualatex",
+            ),
+            "tex_compiler requires",
+        ),
+        (
+            lambda: style(
+                "normal",
+                venue="icml",
+                backend="matplotlib",
+                pgf_preamble=r"\usepackage{amsmath}",
+            ),
+            "pgf_preamble requires",
+        ),
+        (
+            lambda: style(
+                "normal",
+                venue="icml",
+                backend="pgf",
+                pgf_preamble=r"\usepackage{times}",
+                text_font="Roboto Condensed",
+            ),
+            "text_font requires",
+        ),
+        (
+            lambda: style(
+                "normal",
+                venue="icml",
+                backend="pgf",
+                pgf_preamble=r"\usepackage{times}",
+                math_font="stix",
+            ),
+            "math_font requires",
+        ),
+        (
+            lambda: style(
+                "normal",
+                venue="icml",
+                backend="pgf",
+                text_font="Roboto Condensed",
+            ),
+            "text_font requires tex_compiler",
+        ),
     ],
 )
 def test_unsupported_styles_fail_loudly(
@@ -668,7 +815,7 @@ def test_explicit_overrides_are_applied() -> None:
         "frappe",
         venue="icml",
         column="half",
-        font="Roboto Condensed",
+        text_font="Roboto Condensed",
         font_weight="light",
         font_size=13.0,
         figure_size=(7.0, 3.5),
@@ -763,7 +910,7 @@ def test_register_fonts_adds_font_files() -> None:
     config = style(
         "normal",
         venue="icml",
-        font="DejaVu Sans",
+        text_font="DejaVu Sans",
         font_weight="light",
     )
 
@@ -784,26 +931,10 @@ def test_missing_font_file_fails_loudly() -> None:
         register_fonts("missing-font-file.ttf")
 
 
-def test_usetex_uses_conference_font() -> None:
-    config = style("normal", venue="icml", usetex=True)
-
-    assert value(config, "text.usetex") is True
-    assert value(config, "font.family") == "Times New Roman"
-    assert value(config, "text.latex.preamble") == (
-        r"\usepackage{fontspec}\setmainfont{TeX Gyre Termes}"
-    )
-    assert value(config, "pgf.texsystem") == "lualatex"
-    assert value(config, "pgf.preamble") == (
-        r"\usepackage{fontspec}\setmainfont{TeX Gyre Termes}"
-    )
-    assert value(config, "pgf.rcfonts") is False
+def call_with_unsupported_usetex(call: Callable[..., object]) -> None:
+    call("normal", venue="icml", usetex=True)
 
 
-def test_usetex_rejects_custom_font() -> None:
-    with pytest.raises(ValueError, match="usetex styles require font"):
-        style(
-            "normal",
-            venue="icml",
-            usetex=True,
-            font="Roboto Condensed",
-        )
+def test_usetex_is_unsupported() -> None:
+    with pytest.raises(TypeError, match="unexpected keyword argument 'usetex'"):
+        call_with_unsupported_usetex(style)

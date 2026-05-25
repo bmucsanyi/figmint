@@ -1,0 +1,123 @@
+\documentclass{article}
+\usepackage[letterpaper,margin=0.55in]{geometry}
+\usepackage{figmint}
+
+\makeatletter
+\newcommand*{\figmintprintgridstate}[1]{%
+  \ifpgfplots@xmajorgrids
+    \def\figmintxmajorgrids{true}%
+  \else
+    \def\figmintxmajorgrids{false}%
+  \fi
+  \ifpgfplots@ymajorgrids
+    \def\figmintymajorgrids{true}%
+  \else
+    \def\figmintymajorgrids{false}%
+  \fi
+  \typeout{FIGMINT_GRID name=#1;x=\figmintxmajorgrids;y=\figmintymajorgrids}%
+}
+\newcommand*{\figmintprintcolormap}[1]{%
+  \pgfkeysgetvalue{/pgfplots/colormap name}\figmintcolormapname
+  \typeout{FIGMINT_COLORMAP name=#1;value=\figmintcolormapname}%
+}
+\makeatother
+
+\begin{document}
+
+\figmintset{theme=normal, figure width=2.2in, figure height=1.2in}
+
+\begin{figmintfigure}
+  \begin{axis}[
+    xmin=0, xmax=1,
+    ymin=0, ymax=1,
+    execute at end axis={\figmintprintgridstate{base}},
+  ]
+    \addplot+ coordinates {(0,0) (1,1)};
+  \end{axis}
+\end{figmintfigure}
+
+\begin{figmintfigure}
+  \begin{axis}[
+    xmin=0, xmax=1,
+    ymin=0, ymax=1,
+    execute at end axis={\figmintprintgridstate{line}},
+  ]
+    \addplot+[figmint line] coordinates {(0,0) (1,1)};
+  \end{axis}
+\end{figmintfigure}
+
+\begin{figmintfigure}
+  \begin{axis}[
+    ymin=0, ymax=1,
+    xtick={0,1},
+    execute at end axis={\figmintprintgridstate{bar}},
+  ]
+    \addplot+[figmint bar] coordinates {(0,0.35) (1,0.65)};
+  \end{axis}
+\end{figmintfigure}
+
+\begin{figmintfigure}
+  \begin{axis}[
+    xmin=0, xmax=1,
+    ytick={0,1},
+    execute at end axis={\figmintprintgridstate{horizontal-bar}},
+  ]
+    \addplot+[figmint horizontal bar] coordinates {(0.35,0) (0.65,1)};
+  \end{axis}
+\end{figmintfigure}
+
+\begin{figmintfigure}
+  \begin{axis}[
+    xmin=0, xmax=1,
+    ymin=0, ymax=1,
+    execute at end axis={\figmintprintgridstate{mixed-line-horizontal-bar}},
+  ]
+    \addplot+[figmint line] coordinates {(0,0) (1,1)};
+    \addplot+[figmint horizontal bar] coordinates {(0.35,0) (0.65,1)};
+  \end{axis}
+\end{figmintfigure}
+
+\begin{figmintfigure}
+  \begin{axis}[
+    xmin=0, xmax=1,
+    ymin=0, ymax=1,
+    execute at end axis={\figmintprintgridstate{mixed-horizontal-bar-line}},
+  ]
+    \addplot+[figmint horizontal bar] coordinates {(0.35,0) (0.65,1)};
+    \addplot+[figmint line] coordinates {(0,0) (1,1)};
+  \end{axis}
+\end{figmintfigure}
+
+\begin{figmintfigure}
+  \begin{axis}[
+    xmin=0, xmax=1,
+    ymin=0, ymax=1,
+    execute at end axis={\figmintprintgridstate{scatter}},
+  ]
+    \addplot+[figmint scatter] coordinates {(0,0) (1,1)};
+  \end{axis}
+\end{figmintfigure}
+
+\figmintset{theme=frappe, figure width=2.2in, figure height=1.2in}
+
+\begin{figmintfigure}
+  \begin{axis}[
+    figmint heatmap,
+    xmin=-0.5, xmax=1.5,
+    ymin=-0.5, ymax=1.5,
+    execute at end axis={%
+      \figmintprintgridstate{heatmap}%
+      \figmintprintcolormap{frappe-heatmap}%
+    },
+  ]
+    \addplot+[matrix plot*,mesh/rows=2,mesh/cols=2,point meta=explicit] table[row sep=crcr,meta=z] {
+      x y z\\
+      0 0 0\\
+      1 0 1\\
+      0 1 0.5\\
+      1 1 0.75\\
+    };
+  \end{axis}
+\end{figmintfigure}
+
+\end{document}

@@ -117,7 +117,7 @@ with plt.rc_context(
         theme="frappe",
         venue="icml",
         column="half",
-        font="Roboto Condensed",
+        text_font="Roboto Condensed",
         font_weight="light",
         font_size=13.0,
         figure_size=(7.5, 4.25),
@@ -175,11 +175,11 @@ Grayscale separation is deliberately excluded from the constraints. The target m
 
 The separation criterion follows the categorical `min_dist` check in [`cols4all`](https://cols4all.github.io/cols4all-R/articles/01_paper.html). The white-background contrast constraint follows the [WCAG non-text contrast](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html) threshold for graphical objects. The broader goals follow scientific-colormap guidance from [Crameri et al.](https://www.nature.com/articles/s41467-020-19160-7): perceptual separation, color-vision robustness, and readable scientific figures.
 
-The formal repair above applies only to `normal`. The Catppuccin colors used by the themed styles are official palette values. Each themed style sets both the line/bar color cycle and a sequential Matplotlib colormap built from the theme background, main accent, and text colors. Dark themes set the axes, figure, and saved-output background to the theme base color, so exported plots can be imported into matching slide decks without a white rectangle.
+The formal repair above applies only to `normal`. The Catppuccin colors used by the themed styles are official palette values. Each themed style sets the line/bar color cycle from that theme and uses Matplotlib's built-in `plasma` colormap for scalar data. Dark themes set the axes, figure, and saved-output background to the theme base color, so exported plots can be imported into matching slide decks without a white rectangle.
 
 ## Venue Presets
 
-Venue presets set the default figure size, font size, and font for paper figures. Figure text size is derived from the target venue's caption font size, so labels, titles, ticks, and legends share the caption scale at the final inserted figure size. ICLR and NeurIPS use `10 pt`; ICML uses `9 pt`. All supported venue presets default to `Times New Roman`. `font`, `font_weight`, `font_size`, and `figure_size` are overrides; omit them to use the venue preset. To make a talk version, change the theme and override the font and size fields when needed. If Matplotlib cannot already see the target font, call `register_fonts(...)` once before rendering.
+Venue presets set the default figure size, font size, and native Matplotlib text font for paper figures. Figure text size is derived from the target venue's caption font size, so labels, titles, ticks, and legends share the caption scale at the final inserted figure size. ICLR and NeurIPS use `10 pt`; ICML uses `9 pt`. All supported venue presets use Times-style text. `text_font`, `font_weight`, `font_size`, and `figure_size` are overrides; omit them to use the venue preset. To make a talk version, change the theme and override the font and size fields when needed. If Matplotlib cannot already see the target font, call `register_fonts(...)` once before rendering.
 
 Choose one of:
 
@@ -197,11 +197,12 @@ style(
     "frappe",
     venue="icml",
     column="half",
-    font="Roboto Condensed",
+    text_font="Roboto Condensed",
     font_weight="light",
     font_size=13.0,
     figure_size=(7.5, 4.25),
 )
+style("normal", venue="icml", backend="pgf")
 ```
 
 ## Customization
@@ -214,14 +215,23 @@ style(
 - `width_fraction`
 - `rows`
 - `cols`
-- `usetex`
-- `font`
+- `backend`
+- `tex_compiler`
+- `pgf_preamble`
+- `text_font`
+- `math_font`
 - `font_weight`
 - `font_size`
 - `figure_size`
 - `line_width`
 - `grid_alpha`
 - `height_to_width_ratio`
+
+`backend="matplotlib"` uses native Matplotlib text and Mathtext. `text_font=None` uses the venue text font; the supported venues use Times-style text. `math_font="stix"` selects STIX Mathtext for native Matplotlib output.
+
+`backend="pgf"` returns PGF backend rcParams with `tex_compiler="pdflatex"` by default. `pgf_preamble=None` makes figmint build the PGF preamble. `text_font=None` injects the venue text setup from the actual venue style file: ICLR and ICML use `times`; NeurIPS sets `\rmdefault` to `ptm` and `\sfdefault` to `phv`. Custom `text_font` values require XeLaTeX or LuaLaTeX and inject `fontspec` plus `\setmainfont`. `math_font=None` leaves LaTeX math at the compiler default. `math_font="stix"` injects `stix2` for pdfLaTeX and `unicode-math` with `STIX Two Math` for XeLaTeX and LuaLaTeX. A non-`None` `pgf_preamble` is used as the full manual preamble, so text and math font setup belong to that string.
+
+`style(...)` is a pure rcParams builder. It does not call `matplotlib.use(...)`, `plt.switch_backend(...)`, or `savefig(...)`. In normal scripts with one output backend, import `matplotlib.pyplot` at the top, enter `plt.rc_context(style(..., backend="pgf"))`, create the figure inside that block, and call `savefig(...)` without a backend argument. That works because pyplot selects the backend at the first plotting call. Scripts that intentionally mix PGF and native Matplotlib output in one process should use Matplotlib's own backend API at the switch point.
 
 `finish(axis)` is called after the plot and legend exist, before `savefig(...)`. For a fixed legend location such as `loc="upper right"`, it lets Matplotlib place the legend, then snaps the legend anchor to the nearest major grid coordinate that keeps the legend inside the axes. For `loc="best"`, it searches fixed legend locations and all column counts from one to the number of legend entries, scores each rendered candidate by data overlap and compactness, and snaps the selected candidate to the same major-grid coordinates.
 

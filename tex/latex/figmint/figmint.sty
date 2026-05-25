@@ -1,5 +1,5 @@
-\NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{figmint}[2026/05/19 PGFPlots style for paper-native figures]
+\NeedsTeXFormat{LaTeX2e}[2020-10-01]
+\ProvidesPackage{figmint}[2026-05-25 v0.1.0 PGFPlots style for paper-native figures]
 \RequirePackage{etoolbox}
 \RequirePackage{xfp}
 \RequirePackage{pgfplots}
@@ -410,6 +410,14 @@
         \let\selectfont\pgf@selectfontorig
     }{}%
     \normalfont\figmintsecondaryfont
+}
+
+\newcommand*{\figmint@enablevaluexgrid}{%
+    \global\pgfplots@xmajorgridstrue
+}
+
+\newcommand*{\figmint@enablevalueygrid}{%
+    \global\pgfplots@ymajorgridstrue
 }
 
 \newcommand*{\figmintlegendrecordpoint}{%
@@ -1528,6 +1536,7 @@
         title style={font=\figmintprimaryfont},
         tick label style={font=\figmintsecondaryfont,inner sep=0pt},
         legend style={font=\figmintsecondaryfont},
+        every node near coord/.append style={font=\figmintsecondaryfont},
         log number format basis/.code 2 args={\textrm{##1}\textsuperscript{\pgfmathprintnumber[assume math mode=true]{##2}}},
     },
     figmint/text x tick labels/.style={
@@ -1568,7 +1577,7 @@
         axis x line*=bottom,
         axis y line*=left,
         tick align=outside,
-        grid=major,
+        grid=none,
         grid style={solid},
         legend style={draw=none,fill opacity=1,text opacity=1,rounded corners=0pt,inner xsep=3.2pt,inner ysep=3.2pt,nodes={inner sep=0pt,outer sep=0pt},/tikz/column sep=7pt,/tikz/row sep=0pt},
         axis line style/.append style={/pgfplots/on layer=axis foreground},
@@ -1576,6 +1585,8 @@
         minor tick style/.append style={/pgfplots/on layer=axis foreground},
         axis on top=false,
     },
+    figmint/value x grid/.style={execute at begin plot/.add={}{\figmint@enablevaluexgrid}},
+    figmint/value y grid/.style={execute at begin plot/.add={}{\figmint@enablevalueygrid}},
     figmint legend mode/.initial=best,
     figmint legend fixed location/.initial=,
     figmint legend report/.initial=,
@@ -1586,18 +1597,18 @@
     legend pos/south east/.append style={figmint legend fixed=south east},
     legend pos/north west/.append style={figmint legend fixed=north west},
     legend pos/north east/.append style={figmint legend fixed=north east},
-    figmint line/.style={no markers},
-    figmint line marks/.style={mark=*},
+    figmint line/.style={figmint/value y grid,no markers},
+    figmint line marks/.style={figmint/value y grid,mark=*},
     figmint scatter/.style={only marks,mark=figmintdisc,mark options={solid,draw=none,fill=.}},
     figmint filled scatter/.style={only marks,mark=figmintdisc,/pgfplots/scatter=true,scatter/use mapped color={draw=none,fill=mapped color},mark options={solid,draw=none,fill=.}},
     figmint bar legend/.style={
         legend image code/.code={\draw[##1,solid,mark=none,fill=.!30!\figmintbackgroundcolor,fill opacity=1] (0cm,-0.08cm) rectangle (0.35cm,0.08cm);},
     },
-    figmint bar/.style={/tikz/ybar,bar direction=y,bar width=\figmintbarwidth,enlarge x limits=0.12,fill=.!30!\figmintbackgroundcolor,fill opacity=1,solid,mark=none,figmint bar legend,execute at begin plot/.add={}{\global\figmintlegendybartrue},execute at end plot/.add={}{\global\figmintlegendybarfalse}},
+    figmint bar/.style={figmint/value y grid,/tikz/ybar,bar direction=y,bar width=\figmintbarwidth,enlarge x limits=0.12,fill=.!30!\figmintbackgroundcolor,fill opacity=1,solid,mark=none,figmint bar legend,execute at begin plot/.add={}{\global\figmintlegendybartrue},execute at end plot/.add={}{\global\figmintlegendybarfalse}},
     figmint grouped bar/.style 2 args={figmint bar,bar width={\fpeval{min(\figmintgroupedbarwidth,\figmintbargroupwidth / (#1))}},bar shift={\fpeval{(#2 - (#1 + 1) / 2) * min(\figmintgroupedbarwidth,\figmintbargroupwidth / (#1))}}},
-    figmint horizontal bar/.style={/tikz/xbar,bar direction=x,bar width=\figmintbarwidth,enlarge y limits=0.12,fill=.!30!\figmintbackgroundcolor,fill opacity=1,solid,mark=none,figmint bar legend,execute at begin plot/.add={}{\global\figmintlegendxbartrue},execute at end plot/.add={}{\global\figmintlegendxbarfalse}},
-    figmint area/.style={no markers,fill=.,fill opacity=0.18},
-    figmint interval/.style={draw=none,fill=\figmintcycleonecolor,fill opacity=0.18,/pgfplots/on layer=pre main},
+    figmint horizontal bar/.style={figmint/value x grid,/tikz/xbar,bar direction=x,bar width=\figmintbarwidth,enlarge y limits=0.12,fill=.!30!\figmintbackgroundcolor,fill opacity=1,solid,mark=none,figmint bar legend,execute at begin plot/.add={}{\global\figmintlegendxbartrue},execute at end plot/.add={}{\global\figmintlegendxbarfalse}},
+    figmint area/.style={figmint/value y grid,no markers,fill=.,fill opacity=0.18},
+    figmint interval/.style={figmint/value y grid,draw=none,fill=\figmintcycleonecolor,fill opacity=0.18,/pgfplots/on layer=pre main},
     figmint heatmap/.style={
         enlargelimits=false,
         grid=none,
@@ -1675,7 +1686,7 @@
         legend style={fill=FigmintLatteBackground,text=FigmintLatteText},
         cycle list name=figmint latte,
         bar cycle list/.style={cycle list name=figmint latte},
-        colormap name=figmint latte,
+        colormap name=figmint plasma,
     },
     figmint/theme frappe/.style={
         axis background/.style={fill=FigmintFrappeBackground},
@@ -1690,7 +1701,7 @@
         legend style={fill=FigmintFrappeBackground,text=FigmintFrappeText},
         cycle list name=figmint frappe,
         bar cycle list/.style={cycle list name=figmint frappe},
-        colormap name=figmint frappe,
+        colormap name=figmint plasma,
     },
     figmint/theme macchiato/.style={
         axis background/.style={fill=FigmintMacchiatoBackground},
@@ -1705,7 +1716,7 @@
         legend style={fill=FigmintMacchiatoBackground,text=FigmintMacchiatoText},
         cycle list name=figmint macchiato,
         bar cycle list/.style={cycle list name=figmint macchiato},
-        colormap name=figmint macchiato,
+        colormap name=figmint plasma,
     },
     figmint/theme mocha/.style={
         axis background/.style={fill=FigmintMochaBackground},
@@ -1720,7 +1731,7 @@
         legend style={fill=FigmintMochaBackground,text=FigmintMochaText},
         cycle list name=figmint mocha,
         bar cycle list/.style={cycle list name=figmint mocha},
-        colormap name=figmint mocha,
+        colormap name=figmint plasma,
     },
     figmint current/.style={
         /pgfplots/figmint/base axes,

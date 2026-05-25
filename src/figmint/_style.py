@@ -1,11 +1,10 @@
 """Matplotlib rcParams builders."""
 
 from pathlib import Path
+from typing import Literal
 
 from cycler import cycler
-from matplotlib import colormaps
 from matplotlib import font_manager as mpl_font_manager
-from matplotlib.colors import Colormap, LinearSegmentedColormap
 
 from figmint._colors import COLOR_THEMES
 
@@ -15,6 +14,9 @@ FIGURE_SIZE_DIMENSIONS = 2
 
 THEMES = tuple(COLOR_THEMES)
 VENUES = ("iclr", "neurips", "icml")
+BACKENDS = ("matplotlib", "pgf")
+TEX_COMPILERS = ("pdflatex", "xelatex", "lualatex")
+MATH_FONTS = ("stix",)
 VENUE_CAPTION_FONT_SIZES = {
     "iclr": 10.0,
     "neurips": 10.0,
@@ -26,7 +28,15 @@ VENUE_FONTS = {
     "neurips": "Times New Roman",
     "icml": "Times New Roman",
 }
-LATEX_FONT_PREAMBLE = r"\usepackage{fontspec}\setmainfont{TeX Gyre Termes}"
+VENUE_PREAMBLES = {
+    "iclr": r"\usepackage{times}",
+    "icml": r"\usepackage{times}",
+    "neurips": (
+        r"\renewcommand{\rmdefault}{ptm}"
+        "\n"
+        r"\renewcommand{\sfdefault}{phv}"
+    ),
+}
 
 BACKGROUND_COLOR_PARAMS = (
     "axes.facecolor",
@@ -60,8 +70,11 @@ def style(
     width_fraction: float = 1.0,
     rows: int = 1,
     cols: int = 1,
-    usetex: bool = False,
-    font: str | None = None,
+    backend: Literal["matplotlib", "pgf"] = "matplotlib",
+    tex_compiler: Literal["pdflatex", "xelatex", "lualatex"] = "pdflatex",
+    pgf_preamble: str | None = None,
+    text_font: str | None = None,
+    math_font: Literal["stix"] | None = None,
     font_weight: str | int = "normal",
     font_size: float | None = None,
     figure_size: tuple[float, float] | None = None,
@@ -79,8 +92,14 @@ def style(
         line_width=line_width,
         grid_alpha=grid_alpha,
         height_to_width_ratio=height_to_width_ratio,
+        backend=backend,
+        tex_compiler=tex_compiler,
+        pgf_preamble=pgf_preamble,
+        text_font=text_font,
+        math_font=math_font,
     )
     resolved_font_size = _resolve_figure_text_size(venue=venue, font_size=font_size)
+    resolved_text_font = _resolve_text_font(venue=venue, text_font=text_font)
 
     return {
         **_layout(
@@ -93,10 +112,18 @@ def style(
             height_to_width_ratio=height_to_width_ratio,
         ),
         **_font(
-            venue=venue,
-            usetex=usetex,
-            font=_resolve_font(venue=venue, font=font),
+            backend=backend,
+            text_font=resolved_text_font,
+            math_font=math_font,
             font_weight=font_weight,
+        ),
+        **_backend_config(
+            venue=venue,
+            backend=backend,
+            tex_compiler=tex_compiler,
+            pgf_preamble=pgf_preamble,
+            text_font=text_font,
+            math_font=math_font,
         ),
         **_font_size_config(
             font_size=resolved_font_size,
@@ -117,6 +144,11 @@ def _validate_style_inputs(
     line_width: float,
     grid_alpha: float,
     height_to_width_ratio: float,
+    backend: str,
+    tex_compiler: str,
+    pgf_preamble: str | None,
+    text_font: str | None,
+    math_font: str | None,
 ) -> None:
     _require_positive(name="width_fraction", value=width_fraction)
     _require_positive_integer(name="rows", value=rows)
@@ -124,6 +156,16 @@ def _validate_style_inputs(
     _require_positive(name="line_width", value=line_width)
     _require_unit_interval(name="grid_alpha", value=grid_alpha)
     _require_positive(name="height_to_width_ratio", value=height_to_width_ratio)
+    _require_known_backend(backend=backend)
+    _require_known_tex_compiler(tex_compiler=tex_compiler)
+    _require_known_math_font(math_font=math_font)
+    _require_backend_knobs(
+        backend=backend,
+        tex_compiler=tex_compiler,
+        pgf_preamble=pgf_preamble,
+        text_font=text_font,
+        math_font=math_font,
+    )
 
     if font_size is not None:
         _require_font_size(font_size=font_size)
@@ -171,6 +213,63 @@ def _require_unit_interval(*, name: str, value: float) -> None:
         raise ValueError(msg)
 
 
+def _require_known_backend(*, backend: str) -> None:
+    if backend not in BACKENDS:
+        msg = f"Unknown backend {backend!r}. Expected one of {BACKENDS!r}."
+        raise ValueError(msg)
+
+
+def _require_known_tex_compiler(*, tex_compiler: str) -> None:
+    if tex_compiler not in TEX_COMPILERS:
+        msg = (
+            f"Unknown tex_compiler {tex_compiler!r}. Expected one of {TEX_COMPILERS!r}."
+        )
+        raise ValueError(msg)
+
+
+def _require_known_math_font(*, math_font: str | None) -> None:
+    if math_font is None:
+        return
+
+    if math_font not in MATH_FONTS:
+        msg = f"Unknown math_font {math_font!r}. Expected one of {MATH_FONTS!r}."
+        raise ValueError(msg)
+
+
+def _require_backend_knobs(
+    *,
+    backend: str,
+    tex_compiler: str,
+    pgf_preamble: str | None,
+    text_font: str | None,
+    math_font: str | None,
+) -> None:
+    if backend == "matplotlib":
+        if tex_compiler != "pdflatex":
+            msg = "tex_compiler requires backend='pgf'."
+            raise ValueError(msg)
+
+        if pgf_preamble is not None:
+            msg = "pgf_preamble requires backend='pgf'."
+            raise ValueError(msg)
+
+        return
+
+    if pgf_preamble is not None and text_font is not None:
+        msg = "text_font requires pgf_preamble=None."
+        raise ValueError(msg)
+
+    if pgf_preamble is not None and math_font is not None:
+        msg = "math_font requires pgf_preamble=None."
+        raise ValueError(msg)
+
+    if tex_compiler == "pdflatex" and text_font is not None:
+        msg = (
+            "PGF text_font requires tex_compiler='xelatex' or tex_compiler='lualatex'."
+        )
+        raise ValueError(msg)
+
+
 def register_fonts(*font_files: str | Path) -> None:
     """Register local font files with Matplotlib.
 
@@ -197,7 +296,6 @@ def _theme_config(
         raise ValueError(msg)
 
     colors = COLOR_THEMES[theme]
-    colormap_name = _resolve_colormap(theme=theme, colormap=colors["colormap"])
     background = colors["background"]
     edge = colors["edge"]
     grid = _grid_color(theme=theme)
@@ -216,7 +314,7 @@ def _theme_config(
         "legend.framealpha": 1.0,
         "legend.frameon": True,
         "savefig.transparent": False,
-        "image.cmap": colormap_name,
+        "image.cmap": colors["colormap"],
     }
 
 
@@ -225,50 +323,6 @@ def _grid_color(*, theme: str) -> str:
         return COLOR_THEMES["latte"]["edge"]
 
     return COLOR_THEMES[theme]["edge"]
-
-
-def _resolve_colormap(*, theme: str, colormap: str | tuple[str, ...]) -> str:
-    if isinstance(colormap, str):
-        return colormap
-
-    return _register_colormap(theme=theme, colormap=colormap)
-
-
-def _register_colormap(*, theme: str, colormap: tuple[str, ...]) -> str:
-    name = _colormap_name(theme=theme)
-    next_colormap = LinearSegmentedColormap.from_list(name, colormap)
-
-    if name in colormaps and _registered_colormap_matches(
-        name=name,
-        colormap=next_colormap,
-    ):
-        return name
-
-    colormaps.register(
-        next_colormap,
-        name=name,
-        force=True,
-    )
-
-    return name
-
-
-def _registered_colormap_matches(*, name: str, colormap: Colormap) -> bool:
-    registered = colormaps[name]
-
-    if registered.N != colormap.N:
-        return False
-
-    positions = [index / (colormap.N - 1) for index in range(colormap.N)]
-
-    return all(
-        tuple(registered(position)) == tuple(colormap(position))
-        for position in positions
-    )
-
-
-def _colormap_name(*, theme: str) -> str:
-    return f"figmint_{theme}"
 
 
 def _layout(
@@ -379,9 +433,90 @@ def _export_config() -> dict[str, object]:
     }
 
 
-def _resolve_font(*, venue: str, font: str | None) -> str:
-    if font is not None:
-        return font
+def _backend_config(
+    *,
+    venue: str,
+    backend: str,
+    tex_compiler: str,
+    pgf_preamble: str | None,
+    text_font: str | None,
+    math_font: str | None,
+) -> dict[str, object]:
+    if backend == "matplotlib":
+        return {}
+
+    return {
+        "backend": "pgf",
+        "pgf.texsystem": tex_compiler,
+        "pgf.preamble": _pgf_preamble(
+            venue=venue,
+            tex_compiler=tex_compiler,
+            pgf_preamble=pgf_preamble,
+            text_font=text_font,
+            math_font=math_font,
+        ),
+        "pgf.rcfonts": False,
+    }
+
+
+def _pgf_preamble(
+    *,
+    venue: str,
+    tex_compiler: str,
+    pgf_preamble: str | None,
+    text_font: str | None,
+    math_font: str | None,
+) -> str:
+    if pgf_preamble is not None:
+        return pgf_preamble
+
+    parts = [
+        _pgf_text_preamble(
+            venue=venue,
+            text_font=text_font,
+        ),
+    ]
+
+    if math_font is not None:
+        parts.append(_pgf_math_preamble(math_font=math_font, tex_compiler=tex_compiler))
+
+    return "\n".join(part for part in parts if part)
+
+
+def _pgf_text_preamble(*, venue: str, text_font: str | None) -> str:
+    if text_font is not None:
+        return "\n".join(
+            (
+                r"\usepackage{fontspec}",
+                rf"\setmainfont{{{text_font}}}",
+            ),
+        )
+
+    if venue in VENUE_PREAMBLES:
+        return VENUE_PREAMBLES[venue]
+
+    msg = f"Unknown venue {venue!r}. Expected one of {VENUES!r}."
+    raise ValueError(msg)
+
+
+def _pgf_math_preamble(*, math_font: str, tex_compiler: str) -> str:
+    if math_font == "stix" and tex_compiler == "pdflatex":
+        return r"\usepackage[notext]{stix2}"
+
+    if math_font == "stix":
+        return (
+            r"\usepackage{unicode-math}"
+            "\n"
+            r"\setmathfont{STIX Two Math}"
+        )
+
+    msg = f"Unknown math_font {math_font!r}. Expected one of {MATH_FONTS!r}."
+    raise ValueError(msg)
+
+
+def _resolve_text_font(*, venue: str, text_font: str | None) -> str:
+    if text_font is not None:
+        return text_font
 
     if venue in VENUE_FONTS:
         return VENUE_FONTS[venue]
@@ -392,69 +527,26 @@ def _resolve_font(*, venue: str, font: str | None) -> str:
 
 def _font(
     *,
-    venue: str,
-    usetex: bool,
-    font: str,
+    backend: str,
+    text_font: str,
+    math_font: str | None,
     font_weight: str | int,
 ) -> dict[str, object]:
-    if usetex:
-        return _tex_font(
-            venue=venue,
-            font=font,
-            font_weight=font_weight,
-        )
-
-    return _matplotlib_font(font=font, font_weight=font_weight)
-
-
-def _matplotlib_font(*, font: str, font_weight: str | int) -> dict[str, object]:
     return {
         "text.usetex": False,
-        "font.family": font,
+        "font.family": "serif" if backend == "pgf" else text_font,
         "font.weight": font_weight,
         "axes.labelweight": font_weight,
         "axes.titleweight": font_weight,
-        "mathtext.fontset": "stix",
+        **_mathtext_config(math_font=math_font),
     }
 
 
-def _tex_font(
-    *,
-    venue: str,
-    font: str,
-    font_weight: str | int,
-) -> dict[str, object]:
-    expected_font = _resolve_font(venue=venue, font=None)
+def _mathtext_config(*, math_font: str | None) -> dict[str, object]:
+    if math_font == "stix":
+        return {"mathtext.fontset": "stix"}
 
-    if font != expected_font:
-        msg = f"usetex styles require font={expected_font!r} for venue={venue!r}."
-        raise ValueError(msg)
-
-    if font_weight != "normal":
-        msg = "usetex styles require font_weight='normal'."
-        raise ValueError(msg)
-
-    preamble = _latex_preamble(venue=venue)
-
-    return {
-        "text.usetex": True,
-        "font.family": font,
-        "font.weight": font_weight,
-        "axes.labelweight": font_weight,
-        "axes.titleweight": font_weight,
-        "text.latex.preamble": preamble,
-        "pgf.texsystem": "lualatex",
-        "pgf.preamble": preamble,
-        "pgf.rcfonts": False,
-    }
-
-
-def _latex_preamble(*, venue: str) -> str:
-    if venue in VENUES:
-        return LATEX_FONT_PREAMBLE
-
-    msg = f"Unknown venue {venue!r}. Expected one of {VENUES!r}."
-    raise ValueError(msg)
+    return {}
 
 
 def _font_size_config(
