@@ -1,0 +1,39 @@
+\documentclass[border=0pt]{standalone}
+\usepackage{figmint}
+
+% Two constant shaded surfaces side by side in one layered figure. PGFPlots
+% alone draws the second surface outside its axis; build.lua checks the color
+% at the center of each panel against plasma(0.2) and plasma(0.8).
+\begin{document}
+\figmintset{figure width=4cm, figure height=2cm, cols=2, group horizontal sep=0pt}
+\begin{figmintfigure}
+    \begin{groupplot}[
+        group style={figmint, group size=2 by 1},
+        figmint group axis,
+        scale only axis,
+        hide axis,
+        view={0}{90},
+        xmin=0,
+        xmax=1,
+        ymin=0,
+        ymax=1,
+        zmin=0,
+        zmax=1,
+        point meta min=0,
+        point meta max=1,
+    ]
+        \nextgroupplot
+        \addplot3[surf, shader=interp, mesh/rows=2] coordinates {
+            (0,0,0.2) (1,0,0.2)
+
+            (0,1,0.2) (1,1,0.2)
+        };
+        \nextgroupplot
+        \addplot3[surf, shader=interp, mesh/rows=2] coordinates {
+            (0,0,0.8) (1,0,0.8)
+
+            (0,1,0.8) (1,1,0.8)
+        };
+    \end{groupplot}
+\end{figmintfigure}
+\end{document}

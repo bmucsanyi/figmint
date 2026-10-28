@@ -27,29 +27,29 @@ def export_table(path: str | PathLike[str], **columns: object) -> None:
         msg = "export_table requires at least one column."
         raise ValueError(msg)
 
+    values = {name: _python_value(value) for name, value in columns.items()}
     matrix_names = [
         name
-        for name, value in columns.items()
+        for name, value in values.items()
         if _rank(name=name, value=value) == MATRIX_RANK
     ]
 
-    if not matrix_names:
-        headers = tuple(columns)
-        rows = _rows_from_vectors(columns=columns)
+    if matrix_names:
+        headers, rows = _grid_rows(matrix_names=matrix_names, columns=values)
     else:
-        headers, rows = _grid_rows(matrix_names=matrix_names, columns=columns)
+        headers, rows = tuple(values), _rows_from_vectors(columns=values)
 
-    _write_table(path=path, headers=headers, rows=rows)
+    lines = ["\t".join(headers)]
+    lines.extend("\t".join(str(cell) for cell in row) for row in rows)
+    Path(path).write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def _rank(*, name: str, value: object) -> int:
-    data = _python_value(value)
-
-    if _is_scalar(data):
+    if _is_scalar(value):
         msg = f"Column {name!r} must be one- or two-dimensional."
         raise ValueError(msg)
 
-    sequence = _sequence(name=name, value=data)
+    sequence = _sequence(name=name, value=value)
 
     if not sequence:
         return VECTOR_RANK
@@ -61,12 +61,7 @@ def _rank(*, name: str, value: object) -> int:
             msg = f"Column {name!r} has mixed rank."
             raise ValueError(msg)
 
-    if first_is_scalar:
-        return VECTOR_RANK
-
-    _matrix(name=name, value=data)
-
-    return MATRIX_RANK
+    return VECTOR_RANK if first_is_scalar else MATRIX_RANK
 
 
 def _python_value(value: object) -> object:
@@ -89,8 +84,7 @@ def _sequence(*, name: str, value: object) -> Sequence[object]:
 
 
 def _vector(*, name: str, value: object) -> list[object]:
-    data = _python_value(value)
-    sequence = _sequence(name=name, value=data)
+    sequence = _sequence(name=name, value=value)
 
     for item in sequence:
         if not _is_scalar(item):
@@ -101,8 +95,7 @@ def _vector(*, name: str, value: object) -> list[object]:
 
 
 def _matrix(*, name: str, value: object) -> list[list[object]]:
-    data = _python_value(value)
-    sequence = _sequence(name=name, value=data)
+    sequence = _sequence(name=name, value=value)
     rows = []
     width = None
 
@@ -175,18 +168,3 @@ def _grid_rows(
             for x_index, x_value in enumerate(x_values)
         ],
     )
-
-
-def _write_table(
-    *,
-    path: str | PathLike[str],
-    headers: tuple[str, ...],
-    rows: list[list[object]],
-) -> None:
-    lines = ["\t".join(headers)]
-    lines.extend("\t".join(_format_cell(value) for value in row) for row in rows)
-    Path(path).write_text("\n".join(lines) + "\n", encoding="utf-8")
-
-
-def _format_cell(value: object) -> str:
-    return str(value)

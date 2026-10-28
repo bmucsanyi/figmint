@@ -14,6 +14,7 @@ local tests = {
   "semantic-grid-check",
   "tikzscale-check",
   "legend-optimizer-check",
+  "surface-shading-check",
 }
 
 local engine_neutral_tests = {
@@ -97,17 +98,25 @@ local function scan_log(path)
   return 0
 end
 
-local function compile_test(name)
+-- Runs a TeX engine on a test file with the package from this repository.
+-- Long log lines stay unwrapped, so that checks can match whole reports.
+local function tex_command(engine_name, arguments)
   local texinputs = table.concat({
     "./tex/latex/figmint",
     "",
   }, ":")
-  local command = "env TEXINPUTS=" .. quote(texinputs)
+  return "env TEXINPUTS=" .. quote(texinputs)
     .. " TEXMFVAR=" .. quote("build/texmf-var")
     .. " TEXMFCACHE=" .. quote("build/texmf-var")
-    .. " lualatex -halt-on-error -interaction=nonstopmode"
+    .. " max_print_line=10000"
+    .. " " .. engine_name
+    .. " -halt-on-error -interaction=nonstopmode"
     .. " -output-directory=build"
-    .. " " .. quote("testfiles/" .. name .. ".tex")
+    .. " " .. arguments
+end
+
+local function compile_test(name)
+  local command = tex_command("lualatex", quote("testfiles/" .. name .. ".tex"))
 
   if run("lualatex " .. name, command) ~= 0 then
     return 1
@@ -116,18 +125,11 @@ local function compile_test(name)
 end
 
 local function compile_engine_test(name, engine_name)
-  local texinputs = table.concat({
-    "./tex/latex/figmint",
-    "",
-  }, ":")
-  local command = "env TEXINPUTS=" .. quote(texinputs)
-    .. " TEXMFVAR=" .. quote("build/texmf-var")
-    .. " TEXMFCACHE=" .. quote("build/texmf-var")
-    .. " " .. engine_name
-    .. " -halt-on-error -interaction=nonstopmode"
-    .. " -jobname=" .. quote(name .. "-" .. engine_name)
-    .. " -output-directory=build"
-    .. " " .. quote("testfiles/" .. name .. ".tex")
+  local command = tex_command(
+    engine_name,
+    "-jobname=" .. quote(name .. "-" .. engine_name)
+      .. " " .. quote("testfiles/" .. name .. ".tex")
+  )
 
   if run(engine_name .. " " .. name, command) ~= 0 then
     return 1
@@ -136,16 +138,7 @@ local function compile_engine_test(name, engine_name)
 end
 
 local function compile_error_test()
-  local texinputs = table.concat({
-    "./tex/latex/figmint",
-    "",
-  }, ":")
-  local command = "env TEXINPUTS=" .. quote(texinputs)
-    .. " TEXMFVAR=" .. quote("build/texmf-var")
-    .. " TEXMFCACHE=" .. quote("build/texmf-var")
-    .. " lualatex -halt-on-error -interaction=nonstopmode"
-    .. " -output-directory=build"
-    .. " " .. quote("testfiles/validation-error-check.tex")
+  local command = tex_command("lualatex", quote("testfiles/validation-error-check.tex"))
 
   if run("lualatex validation-error-check expected error", command) == 0 then
     print("validation-error-check: expected TeX error did not occur")
@@ -158,6 +151,30 @@ local function compile_error_test()
     return 1
   end
   return 0
+end
+
+-- Expected legend placements of the fixtures shared with the matplotlib tests.
+local function legend_cases()
+  local cases = {}
+  local header = true
+  for line in io.lines("tests/fixtures/legend/cases.tsv") do
+    if header then
+      header = false
+    else
+      local name, _, _, location, anchor, columns =
+        string.match(line, "^([^\t]+)\t([^\t]+)\t([^\t]+)\t([^\t]+)\t([^\t]+)\t([^\t]+)$")
+      local mode = "fixed"
+      if location == "best" then
+        mode = "best"
+      end
+      table.insert(cases, {
+        "build/legend-optimizer-check.log",
+        "FIGMINT_LEGEND name=" .. name .. ";mode=" .. mode
+          .. ";anchor=" .. anchor .. ";columns=" .. columns .. ";",
+      })
+    end
+  end
+  return cases
 end
 
 local function output_checks()
@@ -190,14 +207,65 @@ local function output_checks()
     { "build/semantic-grid-check.log", "FIGMINT_GRID name=scatter;x=false;y=false" },
     { "build/semantic-grid-check.log", "FIGMINT_GRID name=heatmap;x=false;y=false" },
     { "build/semantic-grid-check.log", "FIGMINT_COLORMAP name=frappe-heatmap;value=figmint plasma" },
-    { "build/legend-optimizer-check.log", "FIGMINT_LEGEND name=auto-matrix;mode=best;" },
-    { "build/legend-optimizer-check.log", "FIGMINT_LEGEND name=ybar;mode=best;" },
+    { "build/legend-optimizer-check.log", "FIGMINT_HOOK name=no-legend;finished-point=[]" },
   }
+
+  for _, check in ipairs(legend_cases()) do
+    table.insert(checks, check)
+  end
 
   for _, check in ipairs(checks) do
     if not file_contains(check[1], check[2]) then
       print(check[1] .. ": missing " .. check[2])
       return 1
+    end
+  end
+  return 0
+end
+
+-- Reads a binary PPM image as written by pdftoppm.
+local function read_ppm(path)
+  local handle = io.open(path, "rb")
+  if not handle then
+    return nil
+  end
+  local data = handle:read("*a")
+  handle:close()
+  local width, height, offset = string.match(data, "^P6%s+(%d+)%s+(%d+)%s+%d+%s()")
+  return { width = tonumber(width), height = tonumber(height), data = data, offset = offset }
+end
+
+local function pixel(image, x, y)
+  local index = image.offset + 3 * (y * image.width + x)
+  return { string.byte(image.data, index, index + 2) }
+end
+
+-- The two panels of surface-shading-check are constant shaded surfaces at
+-- plasma(0.2) and plasma(0.8), as matplotlib computes them.
+local function shading_checks()
+  if run("render surface-shading-check",
+    "pdftoppm -r 72 build/surface-shading-check.pdf build/surface-shading-check") ~= 0 then
+    return 1
+  end
+
+  local image = read_ppm("build/surface-shading-check-1.ppm")
+  if not image then
+    print("build/surface-shading-check-1.ppm: missing")
+    return 1
+  end
+
+  local panels = {
+    { image.width // 4, { 106, 0, 168 } },
+    { 3 * image.width // 4, { 252, 166, 54 } },
+  }
+  for _, panel in ipairs(panels) do
+    local color = pixel(image, panel[1], image.height // 2)
+    for channel = 1, 3 do
+      if math.abs(color[channel] - panel[2][channel]) > 3 then
+        print("surface-shading-check: panel at x=" .. panel[1] .. " has color "
+          .. table.concat(color, ",") .. ", expected " .. table.concat(panel[2], ","))
+        return 1
+      end
     end
   end
   return 0
@@ -227,6 +295,10 @@ local function figmint_check()
   end
 
   if output_checks() ~= 0 then
+    return 1
+  end
+
+  if shading_checks() ~= 0 then
     return 1
   end
 

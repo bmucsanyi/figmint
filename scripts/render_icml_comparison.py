@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
-from figmint import export_table, finish, style
+from figmint import export_table, legend, style
 
 HALF_WIDTH_IN = 3.25
 FULL_WIDTH_IN = 6.75
@@ -242,8 +242,7 @@ def _save_lines(*, mpl_dir: Path, data: dict[str, Any]) -> None:
     axis.set_ylim(0.35, 0.95)
     axis.set_xlabel("budget")
     axis.set_ylabel("accuracy")
-    axis.legend(loc="best")
-    finish(axis)
+    legend(axis, loc="best")
     _save_figure(figure=figure, path=mpl_dir / "lines-errorbars.pdf")
 
 
@@ -281,8 +280,7 @@ def _save_bars(*, mpl_dir: Path) -> None:
     axis.set_ylim(0.0, 1.0)
     axis.set_xticks(centers, ["A", "B", "C", "D", "E"])
     axis.set_ylabel("score")
-    axis.legend(loc="best")
-    finish(axis)
+    legend(axis, loc="best")
     _save_figure(figure=figure, path=mpl_dir / "bars.pdf")
 
 
@@ -332,8 +330,7 @@ def _save_interval(*, mpl_dir: Path, data: dict[str, Any]) -> None:
     axis.set_ylim(0.0, 0.9)
     axis.set_xlabel("time")
     axis.set_ylabel("risk")
-    axis.legend(loc="best")
-    finish(axis)
+    legend(axis, loc="best")
     _save_figure(figure=figure, path=mpl_dir / "interval.pdf")
 
 
@@ -350,8 +347,7 @@ def _save_log(*, mpl_dir: Path, data: dict[str, Any]) -> None:
     axis.set_ylim(0.01, 1.1)
     axis.set_xlabel("epoch")
     axis.set_ylabel("loss")
-    axis.legend(loc="best")
-    finish(axis)
+    legend(axis, loc="best")
     _save_figure(figure=figure, path=mpl_dir / "log-error.pdf")
 
 
@@ -381,8 +377,7 @@ def _save_group(*, mpl_dir: Path, data: dict[str, Any]) -> None:
     line_axis.set_title("curves")
     line_axis.set_xlabel("budget")
     line_axis.set_ylabel("accuracy")
-    line_axis.legend(loc="best")
-    finish(line_axis)
+    legend(line_axis, loc="best")
 
     scatter_axis.scatter(
         scatter[0],
@@ -404,8 +399,7 @@ def _save_group(*, mpl_dir: Path, data: dict[str, Any]) -> None:
     bar_axis.set_title("bars")
     bar_axis.set_xticks([1, 2, 3, 4, 5], ["A", "B", "C", "D", "E"])
     bar_axis.set_ylim(0.0, 1.0)
-    bar_axis.legend(loc="best")
-    finish(bar_axis)
+    legend(bar_axis, loc="best")
 
     interval_axis.fill_between(interval[0], interval[2], interval[3], alpha=0.18)
     interval_axis.plot(interval[0], interval[1])

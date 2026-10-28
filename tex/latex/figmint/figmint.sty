@@ -12,7 +12,6 @@
     \pgfusepathqfill
 }
 
-\newcommand*{\figmintmathit}[1]{\ensuremath{\mathit{#1}}}
 \newcommand*{\figmintprinttick}{\pgfmathprintnumber[assume math mode=true]{\tick}}
 
 \definecolor{FigmintWhite}{HTML}{ffffff}
@@ -71,6 +70,7 @@
 \definecolor{FigmintLatteCrust}{HTML}{dce0e8}
 \colorlet{FigmintLatteBackground}{FigmintLatteBase}
 \colorlet{FigmintLatteEdge}{FigmintLatteOverlay0}
+\colorlet{FigmintLatteGrid}{FigmintLatteEdge}
 \colorlet{FigmintLatteCycleOne}{FigmintLatteBlue}
 \colorlet{FigmintLatteCycleTwo}{FigmintLattePeach}
 \colorlet{FigmintLatteCycleThree}{FigmintLatteGreen}
@@ -110,6 +110,7 @@
 \definecolor{FigmintFrappeCrust}{HTML}{232634}
 \colorlet{FigmintFrappeBackground}{FigmintFrappeBase}
 \colorlet{FigmintFrappeEdge}{FigmintFrappeOverlay0}
+\colorlet{FigmintFrappeGrid}{FigmintFrappeEdge}
 \colorlet{FigmintFrappeCycleOne}{FigmintFrappeBlue}
 \colorlet{FigmintFrappeCycleTwo}{FigmintFrappePeach}
 \colorlet{FigmintFrappeCycleThree}{FigmintFrappeGreen}
@@ -149,6 +150,7 @@
 \definecolor{FigmintMacchiatoCrust}{HTML}{181926}
 \colorlet{FigmintMacchiatoBackground}{FigmintMacchiatoBase}
 \colorlet{FigmintMacchiatoEdge}{FigmintMacchiatoOverlay0}
+\colorlet{FigmintMacchiatoGrid}{FigmintMacchiatoEdge}
 \colorlet{FigmintMacchiatoCycleOne}{FigmintMacchiatoBlue}
 \colorlet{FigmintMacchiatoCycleTwo}{FigmintMacchiatoPeach}
 \colorlet{FigmintMacchiatoCycleThree}{FigmintMacchiatoGreen}
@@ -188,6 +190,7 @@
 \definecolor{FigmintMochaCrust}{HTML}{11111b}
 \colorlet{FigmintMochaBackground}{FigmintMochaBase}
 \colorlet{FigmintMochaEdge}{FigmintMochaOverlay0}
+\colorlet{FigmintMochaGrid}{FigmintMochaEdge}
 \colorlet{FigmintMochaCycleOne}{FigmintMochaBlue}
 \colorlet{FigmintMochaCycleTwo}{FigmintMochaPeach}
 \colorlet{FigmintMochaCycleThree}{FigmintMochaGreen}
@@ -199,66 +202,45 @@
 \colorlet{FigmintMochaCycleNine}{FigmintMochaSapphire}
 \colorlet{FigmintMochaCycleTen}{FigmintMochaLavender}
 
-\pgfplotscreateplotcyclelist{figmint normal}{%
-    {color=FigmintNormalCycleOne,draw=FigmintNormalCycleOne},
-    {color=FigmintNormalCycleTwo,draw=FigmintNormalCycleTwo},
-    {color=FigmintNormalCycleThree,draw=FigmintNormalCycleThree},
-    {color=FigmintNormalCycleFour,draw=FigmintNormalCycleFour},
-    {color=FigmintNormalCycleFive,draw=FigmintNormalCycleFive},
-    {color=FigmintNormalCycleSix,draw=FigmintNormalCycleSix},
-    {color=FigmintNormalCycleSeven,draw=FigmintNormalCycleSeven},
-    {color=FigmintNormalCycleEight,draw=FigmintNormalCycleEight},
-    {color=FigmintNormalCycleNine,draw=FigmintNormalCycleNine},
-    {color=FigmintNormalCycleTen,draw=FigmintNormalCycleTen}
+% Defines theme #1, whose colors are named with prefix #2: its cycle list, its
+% axis style, and the prefix that \figmintselectbackgroundcolor looks up.
+\newcommand*{\figmint@definetheme}[2]{%
+    \pgfplotscreateplotcyclelist{figmint #1}{%
+        {color=#2CycleOne,draw=#2CycleOne},
+        {color=#2CycleTwo,draw=#2CycleTwo},
+        {color=#2CycleThree,draw=#2CycleThree},
+        {color=#2CycleFour,draw=#2CycleFour},
+        {color=#2CycleFive,draw=#2CycleFive},
+        {color=#2CycleSix,draw=#2CycleSix},
+        {color=#2CycleSeven,draw=#2CycleSeven},
+        {color=#2CycleEight,draw=#2CycleEight},
+        {color=#2CycleNine,draw=#2CycleNine},
+        {color=#2CycleTen,draw=#2CycleTen}%
+    }%
+    \pgfplotsset{
+        figmint/theme #1/.style={
+            axis background/.style={fill=#2Background},
+            axis line style={draw=#2Edge},
+            tick style={draw=#2Edge},
+            minor tick style={draw=#2Edge},
+            major grid style={draw=#2Grid},
+            label style={text=#2Text},
+            title style={text=#2Text},
+            tick label style={text=#2Text},
+            every node near coord/.append style={text=#2Text},
+            legend style={fill=#2Background,text=#2Text},
+            cycle list name=figmint #1,
+            bar cycle list/.style={cycle list name=figmint #1},
+            colormap name=figmint plasma,
+        },
+    }%
+    \csdef{figmint@theme@#1}{#2}%
 }
-\pgfplotscreateplotcyclelist{figmint latte}{%
-    {color=FigmintLatteCycleOne,draw=FigmintLatteCycleOne},
-    {color=FigmintLatteCycleTwo,draw=FigmintLatteCycleTwo},
-    {color=FigmintLatteCycleThree,draw=FigmintLatteCycleThree},
-    {color=FigmintLatteCycleFour,draw=FigmintLatteCycleFour},
-    {color=FigmintLatteCycleFive,draw=FigmintLatteCycleFive},
-    {color=FigmintLatteCycleSix,draw=FigmintLatteCycleSix},
-    {color=FigmintLatteCycleSeven,draw=FigmintLatteCycleSeven},
-    {color=FigmintLatteCycleEight,draw=FigmintLatteCycleEight},
-    {color=FigmintLatteCycleNine,draw=FigmintLatteCycleNine},
-    {color=FigmintLatteCycleTen,draw=FigmintLatteCycleTen}
-}
-\pgfplotscreateplotcyclelist{figmint frappe}{%
-    {color=FigmintFrappeCycleOne,draw=FigmintFrappeCycleOne},
-    {color=FigmintFrappeCycleTwo,draw=FigmintFrappeCycleTwo},
-    {color=FigmintFrappeCycleThree,draw=FigmintFrappeCycleThree},
-    {color=FigmintFrappeCycleFour,draw=FigmintFrappeCycleFour},
-    {color=FigmintFrappeCycleFive,draw=FigmintFrappeCycleFive},
-    {color=FigmintFrappeCycleSix,draw=FigmintFrappeCycleSix},
-    {color=FigmintFrappeCycleSeven,draw=FigmintFrappeCycleSeven},
-    {color=FigmintFrappeCycleEight,draw=FigmintFrappeCycleEight},
-    {color=FigmintFrappeCycleNine,draw=FigmintFrappeCycleNine},
-    {color=FigmintFrappeCycleTen,draw=FigmintFrappeCycleTen}
-}
-\pgfplotscreateplotcyclelist{figmint macchiato}{%
-    {color=FigmintMacchiatoCycleOne,draw=FigmintMacchiatoCycleOne},
-    {color=FigmintMacchiatoCycleTwo,draw=FigmintMacchiatoCycleTwo},
-    {color=FigmintMacchiatoCycleThree,draw=FigmintMacchiatoCycleThree},
-    {color=FigmintMacchiatoCycleFour,draw=FigmintMacchiatoCycleFour},
-    {color=FigmintMacchiatoCycleFive,draw=FigmintMacchiatoCycleFive},
-    {color=FigmintMacchiatoCycleSix,draw=FigmintMacchiatoCycleSix},
-    {color=FigmintMacchiatoCycleSeven,draw=FigmintMacchiatoCycleSeven},
-    {color=FigmintMacchiatoCycleEight,draw=FigmintMacchiatoCycleEight},
-    {color=FigmintMacchiatoCycleNine,draw=FigmintMacchiatoCycleNine},
-    {color=FigmintMacchiatoCycleTen,draw=FigmintMacchiatoCycleTen}
-}
-\pgfplotscreateplotcyclelist{figmint mocha}{%
-    {color=FigmintMochaCycleOne,draw=FigmintMochaCycleOne},
-    {color=FigmintMochaCycleTwo,draw=FigmintMochaCycleTwo},
-    {color=FigmintMochaCycleThree,draw=FigmintMochaCycleThree},
-    {color=FigmintMochaCycleFour,draw=FigmintMochaCycleFour},
-    {color=FigmintMochaCycleFive,draw=FigmintMochaCycleFive},
-    {color=FigmintMochaCycleSix,draw=FigmintMochaCycleSix},
-    {color=FigmintMochaCycleSeven,draw=FigmintMochaCycleSeven},
-    {color=FigmintMochaCycleEight,draw=FigmintMochaCycleEight},
-    {color=FigmintMochaCycleNine,draw=FigmintMochaCycleNine},
-    {color=FigmintMochaCycleTen,draw=FigmintMochaCycleTen}
-}
+\figmint@definetheme{normal}{FigmintNormal}
+\figmint@definetheme{latte}{FigmintLatte}
+\figmint@definetheme{frappe}{FigmintFrappe}
+\figmint@definetheme{macchiato}{FigmintMacchiato}
+\figmint@definetheme{mocha}{FigmintMocha}
 
 \newcommand*{\figminttheme}{normal}
 \newcommand*{\figmintcolumn}{auto}
@@ -305,65 +287,6 @@
 \newcommand*{\figmintcolorbarticklabelwidth}{1.6em}
 \newcommand*{\figmintcolorbarreservedwidth}{%
     \dimexpr\figmintcolorbarwidth+\figmintcolorbarsep+\figmintmajorticksize+\figmintticklabelshift+\figmintcolorbarticklabelwidth\relax}
-\newcommand*{\figmintlegendmode}{best}
-\newcommand*{\figmintlegendpoints}{}
-\newcommand*{\figmintlegendpoint}[3]{\noexpand\figmintlegendpoint{#1}{#2}{#3}}
-\newcommand*{\figmintlegendbestx}{}
-\newcommand*{\figmintlegendbesty}{}
-\newcommand*{\figmintlegendbestanchor}{}
-\newcommand*{\figmintlegendbestcolumns}{}
-\newcommand*{\figmintlegendbestemptycells}{0}
-\newcommand*{\figmintlegendbestrows}{0}
-\newcommand*{\figmintlegendbestbalance}{0}
-\newcommand*{\figmintlegendbestclearance}{0}
-\newcommand*{\figmintlegendbestmargin}{0}
-\newcommand*{\figmintlegendbestcomplexity}{0}
-\newcommand*{\figmintlegendbestsize}{0}
-\newcommand*{\figmintlegendfixedlocation}{}
-\newcommand*{\figmintlegendreportname}{}
-\newcommand*{\figmintlegendcurrentx}{0}
-\newcommand*{\figmintlegendcurrenty}{0}
-\newcommand*{\figmintlegendpreviousx}{0}
-\newcommand*{\figmintlegendpreviousy}{0}
-\newcommand*{\figmintlegendpreviousplot}{-1}
-\newcommand*{\figmintlegendcandidateclearance}{1}
-\newcommand*{\figmintlegendcandidateemptycells}{0}
-\newcommand*{\figmintlegendcandidaterows}{0}
-\newcommand*{\figmintlegendcandidatebalance}{0}
-\newcommand*{\figmintlegendcandidatemargin}{0}
-\newcommand*{\figmintlegendcandidatecomplexity}{0}
-\newcommand*{\figmintlegendcandidatesize}{0}
-\newcommand*{\figmintlegendtargetx}{}
-\newcommand*{\figmintlegendtargety}{}
-\newcommand*{\figmintlegendfractionx}{}
-\newcommand*{\figmintlegendfractiony}{}
-\newcommand*{\figmintlegendanchor}{}
-\newcommand*{\figmintlegendcandidatewidth}{0}
-\newcommand*{\figmintlegendcandidateheight}{0}
-\newcommand*{\figmintlegendxzero}{0}
-\newcommand*{\figmintlegendxone}{0}
-\newcommand*{\figmintlegendyzero}{0}
-\newcommand*{\figmintlegendyone}{0}
-\newcommand*{\figmintlegendentrytext}{}
-\newcommand*{\figmintlegendentryoptions}{}
-\newcommand*{\figmintlegendentrylist}{}
-\newcommand*{\figmintlegendstoredentries}{}
-\newcommand*{\figmintlegendentries}{}
-\newcommand*{\figmintlegendxgrid}{}
-\newcommand*{\figmintlegendygrid}{}
-\newif\iffigmintlegendactive
-\newif\iffigmintlegendcandidatefits
-\newif\iffigmintlegendcandidatebetter
-\newif\iffigmintlegendhascandidate
-\newif\iffigmintlegendhasentries
-\newif\iffigmintlegendgridhasvalue
-\newif\iffigmintlegendaxisenabled
-\newif\iffigmintlegendxbar
-\newif\iffigmintlegendybar
-\newif\iffigmintlegendbestmargininfinite
-\newif\iffigmintlegendcandidatemargininfinite
-\newif\iffigmintlegendcomparemargintie
-\newif\iffigmintlegendpointgrowthpossible
 
 \newlength{\figmintbasewidthlength}
 \newlength{\figmintfigurewidthlength}
@@ -372,45 +295,6 @@
 \newlength{\figmintgroupverticalseplength}
 \newlength{\figmintaxiswidthlength}
 \newlength{\figmintaxisheightlength}
-\newlength{\figmintlegendlabelwidthlength}
-\newlength{\figmintlegendlabelheightlength}
-\newlength{\figmintlegendentrywidthlength}
-\newlength{\figmintlegendentryheightlength}
-\newlength{\figmintlegendwidthlength}
-\newlength{\figmintlegendheightlength}
-\newlength{\figmintlegendseparationlength}
-\newcount\figmintlegendentrycount
-\newcount\figmintlegendcolumncount
-\newcount\figmintlegendrowcount
-\newcount\figmintlegendseparationcount
-\newcount\figmintlegendcandidatebadness
-\newcount\figmintlegendbestbadness
-\newcount\figmintlegendremainingentrycount
-\newcount\figmintlegendbarcount
-
-\newcommand*{\figmintlegendbeginaxis}{%
-    \global\let\figmintlegendpoints\@empty
-    \global\let\figmintlegendstoredentries\pgfutil@empty
-    \global\figmintlegendbarcount=0
-    \global\figmintlegendaxisenabledtrue
-    \global\figmintlegendactivetrue
-}
-
-\newcommand*{\figmintlegendendaxis}{%
-    \global\let\figmintlegendpoints\@empty
-    \global\let\figmintlegendstoredentries\pgfutil@empty
-    \global\figmintlegendactivefalse
-    \global\figmintlegendaxisenabledfalse
-    \global\figmintlegendxbarfalse
-    \global\figmintlegendybarfalse
-}
-
-\newcommand*{\figmintlegendselectfont}{%
-    \ifcsdef{pgf@selectfontorig}{%
-        \let\selectfont\pgf@selectfontorig
-    }{}%
-    \normalfont\figmintsecondaryfont
-}
 
 \newcommand*{\figmint@enablevaluexgrid}{%
     \global\pgfplots@xmajorgridstrue
@@ -420,594 +304,1261 @@
     \global\pgfplots@ymajorgridstrue
 }
 
-\newcommand*{\figmintlegendrecordpoint}{%
-    \iffigmintlegendactive
-        \ifpgfplotsaxisparsecoordinateok
-            \iffigmintlegendybar
-                \global\advance\figmintlegendbarcount by1
-                \pgfplotscoordmath{y}{parsenumber}{0}%
-                \let\figmintlegendbarbaseliney\pgfmathresult
-                \xdef\figmintlegendpoints{%
-                    \figmintlegendpoints
-                    \noexpand\figmintlegendpoint{\the\numexpr100000+\figmintlegendbarcount\relax}{\pgfplots@current@point@x}{\figmintlegendbarbaseliney}%
-                    \noexpand\figmintlegendpoint{\the\numexpr100000+\figmintlegendbarcount\relax}{\pgfplots@current@point@x}{\pgfplots@current@point@y}}%
-            \else
-                \iffigmintlegendxbar
-                    \global\advance\figmintlegendbarcount by1
-                    \pgfplotscoordmath{x}{parsenumber}{0}%
-                    \let\figmintlegendbarbaselinex\pgfmathresult
-                    \xdef\figmintlegendpoints{%
-                        \figmintlegendpoints
-                        \noexpand\figmintlegendpoint{\the\numexpr100000+\figmintlegendbarcount\relax}{\figmintlegendbarbaselinex}{\pgfplots@current@point@y}%
-                        \noexpand\figmintlegendpoint{\the\numexpr100000+\figmintlegendbarcount\relax}{\pgfplots@current@point@x}{\pgfplots@current@point@y}}%
-                \else
-                    \xdef\figmintlegendpoints{%
-                        \figmintlegendpoints
-                        \noexpand\figmintlegendpoint{\the\pgfplots@numplots}{\pgfplots@current@point@x}{\pgfplots@current@point@y}}%
-                \fi
+\newcommand*{\figmint@patcherror}[1]{%
+    \PackageError{figmint}{Could not patch \string#1}%
+        {The installed PGFPlots changed \string#1, which figmint builds on.}%
+}
+
+% While PGFPlots draws the plots of an axis, the corners of a shaded surface
+% (shader=interp) are canvas coordinates, but PGFPlots places the surface with
+% \pgftext, which applies the current transformation a second time. In
+% layered pictures, such as every figmintfigure, that transformation carries
+% the offset of the axis, so every shaded surface but the first one in a
+% picture lands outside its axis. The surface is therefore placed without the
+% transformation during the plot phase. Legend images of surface plots are
+% drawn outside that phase, in local coordinates that need the transformation.
+\newcommand*{\figmint@surfacetransform}{%
+    \if V\pgfplotsaxisplotphase
+        \pgftransformreset
+    \fi
+}
+\patchcmd{\pgfplotslibrarysurfdrawinpicture}{\pgftext}{\figmint@surfacetransform\pgftext}{}{%
+    \figmint@patcherror\pgfplotslibrarysurfdrawinpicture
+}
+
+% Legend placement.
+%
+% figmint places a legend inside its axes at one of nine anchors and with the
+% column count that covers the least plotted ink. docs/legend.md specifies the
+% rule; src/figmint/_legend.py implements the same rule for matplotlib.
+%
+% Ink is collected only for an axis whose legend figmint places. Everything
+% PGFPlots draws for the plots and for the TikZ commands inside such an axis
+% (stroked and filled paths, nodes, and shaded surfaces) is rasterized onto
+% square cells of side \c__figmint_legend_cell_dim. Collection starts after
+% PGFPlots has drawn the axis background, grid, and lines below the plots, and
+% it also covers the markers that PGFPlots draws after the axis. Other axes
+% are not touched, so they keep the Lua backend of PGFPlots and cost nothing
+% per point.
+\ExplSyntaxOn
+
+\msg_new:nnnn { figmint } { legend-mode }
+  { Unknown~legend~mode~`#1'. }
+  { Use~best,~fixed,~or~manual. }
+\msg_new:nnnn { figmint } { legend-location }
+  { Unknown~fixed~legend~location~`#1'. }
+  {
+    Use~north~east,~north~west,~south~west,~south~east,~east,~west,~south,~
+    north,~or~center.
+  }
+\msg_new:nnnn { figmint } { legend-fit }
+  { No~legend~placement~fits~inside~the~axes. }
+  { Reduce~the~legend~size~or~place~the~legend~manually. }
+
+\cs_generate_variant:Nn \str_case:nnF { V }
+\cs_generate_variant:Nn \msg_error:nnn { nnV }
+
+\dim_const:Nn \c__figmint_legend_cell_dim { 2pt }
+\int_const:Nn \c__figmint_legend_cell_int
+  { \dim_to_decimal_in_sp:n { \c__figmint_legend_cell_dim } }
+\int_const:Nn \c__figmint_legend_half_cell_int { \c__figmint_legend_cell_int / 2 }
+% Growth factors of the margin score are multiples of 1 / this unit.
+\int_const:Nn \c__figmint_legend_scale_unit_int { 256 }
+% The size score sums the legend width and height in units of 1 / this unit
+% of the axes width and height.
+\int_const:Nn \c__figmint_legend_size_unit_int { 10000 }
+
+% Candidate anchors in preference order. Each item holds the preference rank,
+% the PGF anchor, the position of the anchor along x and y in halves of the
+% axes size, and the anchor complexity: corners and the middle of the top and
+% bottom edges are simplest, the middle of the left and right edges follow,
+% and the center comes last.
+\seq_const_from_clist:Nn \c__figmint_legend_anchors_seq
+  {
+    { 1 } { north~east } { 2 } { 2 } { 0 } ,
+    { 2 } { north~west } { 0 } { 2 } { 0 } ,
+    { 3 } { south~west } { 0 } { 0 } { 0 } ,
+    { 4 } { south~east } { 2 } { 0 } { 0 } ,
+    { 5 } { east } { 2 } { 1 } { 1 } ,
+    { 6 } { west } { 0 } { 1 } { 1 } ,
+    { 7 } { south } { 1 } { 0 } { 0 } ,
+    { 8 } { north } { 1 } { 2 } { 0 } ,
+    { 9 } { center } { 1 } { 1 } { 2 } ,
+  }
+
+% Scores of a candidate, compared in this order; < marks scores where smaller
+% is better and > marks scores where larger is better.
+\tl_const:Nn \c__figmint_legend_scores_tl
+  {
+    { { badness } { < } }
+    { { empty } { < } }
+    { { balance } { < } }
+    { { clearance } { > } }
+    { { margin } { > } }
+    { { complexity } { < } }
+    { { size } { < } }
+    { { rank } { < } }
+    { { columns } { < } }
+  }
+\tl_map_inline:Nn \c__figmint_legend_scores_tl
+  {
+    \int_new:c { l__figmint_legend_candidate_ \use_i:nn #1 _int }
+    \int_new:c { g__figmint_legend_best_ \use_i:nn #1 _int }
+  }
+
+\bool_new:N \g__figmint_legend_pending_bool
+\bool_new:N \g__figmint_legend_capture_bool
+\bool_new:N \g__figmint_legend_found_bool
+\tl_new:N \g__figmint_legend_picture_tl
+\tl_new:N \g__figmint_legend_cells_tl
+\tl_new:N \g__figmint_legend_table_tl
+\tl_new:N \g__figmint_legend_left_tl
+\tl_new:N \g__figmint_legend_right_tl
+\tl_new:N \g__figmint_legend_saved_entries_tl
+\tl_new:N \g__figmint_legend_saved_specs_tl
+\tl_new:N \g__figmint_legend_best_anchor_tl
+\int_new:N \g__figmint_legend_best_x_int
+\int_new:N \g__figmint_legend_best_y_int
+\int_new:N \g__figmint_legend_entries_int
+\int_new:N \g__figmint_legend_x_origin_int
+\int_new:N \g__figmint_legend_y_origin_int
+\int_new:N \g__figmint_legend_width_int
+\int_new:N \g__figmint_legend_height_int
+\int_new:N \g__figmint_legend_nx_int
+\int_new:N \g__figmint_legend_ny_int
+\int_new:N \g__figmint_legend_stamp_int
+\int_new:N \g__figmint_legend_capacity_int
+\int_new:N \g__figmint_legend_generation_int
+\int_new:N \g__figmint_legend_node_int
+\box_new:N \g__figmint_legend_box
+
+\bool_new:N \l__figmint_legend_stroke_bool
+\bool_new:N \l__figmint_legend_fill_bool
+\bool_new:N \l__figmint_legend_open_bool
+\bool_new:N \l__figmint_legend_inside_bool
+\bool_new:N \l__figmint_legend_better_bool
+\bool_new:N \l__figmint_legend_more_bool
+\tl_new:N \l__figmint_legend_mode_tl
+\tl_new:N \l__figmint_legend_location_tl
+\tl_new:N \l__figmint_legend_path_tl
+\tl_new:N \l__figmint_legend_entry_tl
+\tl_new:N \l__figmint_legend_spec_tl
+\tl_new:N \l__figmint_legend_report_tl
+\tl_new:N \l__figmint_legend_row_tl
+\tl_new:N \l__figmint_legend_column_tl
+\seq_new:N \l__figmint_legend_anchors_seq
+\seq_new:N \l__figmint_legend_rows_seq
+\seq_new:N \l__figmint_legend_crossings_seq
+\int_new:N \l__figmint_legend_count_int
+\int_new:N \l__figmint_legend_sum_int
+\int_new:N \l__figmint_legend_x_int
+\int_new:N \l__figmint_legend_y_int
+\int_new:N \l__figmint_legend_next_x_int
+\int_new:N \l__figmint_legend_next_y_int
+\int_new:N \l__figmint_legend_start_x_int
+\int_new:N \l__figmint_legend_start_y_int
+\int_new:N \l__figmint_legend_corner_x_int
+\int_new:N \l__figmint_legend_corner_y_int
+\int_new:N \l__figmint_legend_left_int
+\int_new:N \l__figmint_legend_right_int
+\int_new:N \l__figmint_legend_bottom_int
+\int_new:N \l__figmint_legend_top_int
+\int_new:N \l__figmint_legend_cell_x_int
+\int_new:N \l__figmint_legend_cell_y_int
+\int_new:N \l__figmint_legend_steps_int
+\int_new:N \l__figmint_legend_first_int
+\int_new:N \l__figmint_legend_last_int
+\int_new:N \l__figmint_legend_span_int
+\int_new:N \l__figmint_legend_first_column_int
+\int_new:N \l__figmint_legend_last_column_int
+\int_new:N \l__figmint_legend_first_row_int
+\int_new:N \l__figmint_legend_last_row_int
+\int_new:N \l__figmint_legend_width_int
+\int_new:N \l__figmint_legend_height_int
+\int_new:N \l__figmint_legend_rows_int
+\int_new:N \l__figmint_legend_low_int
+\int_new:N \l__figmint_legend_high_int
+\int_new:N \l__figmint_legend_middle_int
+\int_new:N \l__figmint_legend_nearest_int
+\int_new:N \l__figmint_legend_gap_x_int
+\int_new:N \l__figmint_legend_gap_y_int
+\int_new:N \l__figmint_legend_anchor_x_int
+\int_new:N \l__figmint_legend_anchor_y_int
+\int_new:N \l__figmint_legend_extent_left_int
+\int_new:N \l__figmint_legend_extent_right_int
+\int_new:N \l__figmint_legend_extent_down_int
+\int_new:N \l__figmint_legend_extent_up_int
+
+% Integer division rounded toward minus and plus infinity, for a positive
+% divisor and a numerator of either sign.
+\cs_new:Npn \__figmint_legend_floor_div:nn #1#2
+  {
+    \int_eval:n
+      {
+        \int_compare:nNnTF {#1} < { 0 }
+          { 0 - \int_div_truncate:nn { ( #2 ) - 1 - ( #1 ) } {#2} }
+          { \int_div_truncate:nn {#1} {#2} }
+      }
+  }
+\cs_new:Npn \__figmint_legend_ceil_div:nn #1#2
+  { \int_eval:n { 0 - \__figmint_legend_floor_div:nn { 0 - ( #1 ) } {#2} } }
+
+% Grid storage. A cell is occupied when it holds the stamp of the current
+% axis, so the grid never needs clearing. The summed-area table holds, at
+% (i, j), the number of occupied cells with column < i and row < j. For every
+% cell, the left and right arrays hold the column of the nearest occupied cell
+% in its row at or left of it (or -1) and at or right of it (or the column
+% count).
+\cs_new_protected:Npn \__figmint_legend_reserve:n #1
+  {
+    \int_compare:nNnT {#1} > { \g__figmint_legend_capacity_int }
+      {
+        \int_gset:Nn \g__figmint_legend_capacity_int
+          { \int_max:nn {#1} { 2 * \g__figmint_legend_capacity_int } }
+        \int_gincr:N \g__figmint_legend_generation_int
+        \tl_gset:Nx \g__figmint_legend_cells_tl
+          { g__figmint_legend_cells_ \int_use:N \g__figmint_legend_generation_int _intarray }
+        \tl_gset:Nx \g__figmint_legend_table_tl
+          { g__figmint_legend_table_ \int_use:N \g__figmint_legend_generation_int _intarray }
+        \tl_gset:Nx \g__figmint_legend_left_tl
+          { g__figmint_legend_left_ \int_use:N \g__figmint_legend_generation_int _intarray }
+        \tl_gset:Nx \g__figmint_legend_right_tl
+          { g__figmint_legend_right_ \int_use:N \g__figmint_legend_generation_int _intarray }
+        \intarray_new:cn { \g__figmint_legend_cells_tl } { \g__figmint_legend_capacity_int }
+        \intarray_new:cn { \g__figmint_legend_table_tl } { \g__figmint_legend_capacity_int }
+        \intarray_new:cn { \g__figmint_legend_left_tl } { \g__figmint_legend_capacity_int }
+        \intarray_new:cn { \g__figmint_legend_right_tl } { \g__figmint_legend_capacity_int }
+      }
+  }
+\cs_new:Npn \__figmint_legend_table:nn #1#2
+  {
+    \intarray_item:cn { \g__figmint_legend_table_tl }
+      { ( #2 ) * ( \g__figmint_legend_nx_int + 1 ) + ( #1 ) + 1 }
+  }
+% Occupied cells in columns #1 to #2 and rows #3 to #4, all inclusive.
+\cs_new:Npn \__figmint_legend_count:nnnn #1#2#3#4
+  {
+    \int_eval:n
+      {
+        \__figmint_legend_table:nn { #2 + 1 } { #4 + 1 }
+        - \__figmint_legend_table:nn {#1} { #4 + 1 }
+        - \__figmint_legend_table:nn { #2 + 1 } {#3}
+        + \__figmint_legend_table:nn {#1} {#3}
+      }
+  }
+
+\cs_new_protected:Npn \__figmint_legend_mark:nn #1#2
+  {
+    \int_set:Nn \l__figmint_legend_cell_x_int {#1}
+    \int_set:Nn \l__figmint_legend_cell_y_int {#2}
+    \bool_lazy_and:nnT
+      { \int_compare_p:n { 0 <= \l__figmint_legend_cell_x_int < \g__figmint_legend_nx_int } }
+      { \int_compare_p:n { 0 <= \l__figmint_legend_cell_y_int < \g__figmint_legend_ny_int } }
+      {
+        \intarray_gset:cnn { \g__figmint_legend_cells_tl }
+          {
+            \l__figmint_legend_cell_y_int * \g__figmint_legend_nx_int
+            + \l__figmint_legend_cell_x_int + 1
+          }
+          { \g__figmint_legend_stamp_int }
+      }
+  }
+\cs_new_protected:Npn \__figmint_legend_mark_point:nn #1#2
+  {
+    \__figmint_legend_mark:nn
+      { \__figmint_legend_floor_div:nn {#1} { \c__figmint_legend_cell_int } }
+      { \__figmint_legend_floor_div:nn {#2} { \c__figmint_legend_cell_int } }
+  }
+
+% Cells whose span overlaps the interval from #1 to #2 (in sp) along an axis
+% of length #3 with #4 cells, written to #5 and #6; #5 > #6 when none does.
+\cs_new_protected:Npn \__figmint_legend_interval:nnnnNN #1#2#3#4#5#6
+  {
+    \bool_lazy_or:nnTF
+      { \int_compare_p:n { #2 < 0 } }
+      { \int_compare_p:n { #1 > #3 } }
+      {
+        \int_set:Nn #5 { 1 }
+        \int_set:Nn #6 { 0 }
+      }
+      {
+        \int_set:Nn #5
+          {
+            \int_min:nn { #4 - 1 }
+              { \int_div_truncate:nn { \int_max:nn { 0 } {#1} } { \c__figmint_legend_cell_int } }
+          }
+        \int_set:Nn #6
+          {
+            \int_min:nn { #4 - 1 }
+              {
+                \int_max:nn {#5}
+                  {
+                    \__figmint_legend_ceil_div:nn { \int_min:nn {#3} {#2} }
+                      { \c__figmint_legend_cell_int }
+                    - 1
+                  }
+              }
+          }
+      }
+  }
+% Occupied cells overlapping the box from (#1, #3) to (#2, #4), in sp.
+\cs_new_protected:Npn \__figmint_legend_box_count:nnnnN #1#2#3#4#5
+  {
+    \__figmint_legend_interval:nnnnNN {#1} {#2}
+      { \g__figmint_legend_width_int } { \g__figmint_legend_nx_int }
+      \l__figmint_legend_first_column_int \l__figmint_legend_last_column_int
+    \__figmint_legend_interval:nnnnNN {#3} {#4}
+      { \g__figmint_legend_height_int } { \g__figmint_legend_ny_int }
+      \l__figmint_legend_first_row_int \l__figmint_legend_last_row_int
+    \bool_lazy_or:nnTF
+      { \int_compare_p:n { \l__figmint_legend_first_column_int > \l__figmint_legend_last_column_int } }
+      { \int_compare_p:n { \l__figmint_legend_first_row_int > \l__figmint_legend_last_row_int } }
+      { \int_set:Nn #5 { 0 } }
+      {
+        \int_set:Nn #5
+          {
+            \__figmint_legend_count:nnnn
+              { \l__figmint_legend_first_column_int } { \l__figmint_legend_last_column_int }
+              { \l__figmint_legend_first_row_int } { \l__figmint_legend_last_row_int }
+          }
+      }
+  }
+
+% Ink rasterization. Coordinates are in sp, relative to the lower left corner
+% of the axes.
+\cs_new_protected:Npn \__figmint_legend_rectangle:nnnn #1#2#3#4
+  {
+    \__figmint_legend_interval:nnnnNN { \int_min:nn {#1} {#3} } { \int_max:nn {#1} {#3} }
+      { \g__figmint_legend_width_int } { \g__figmint_legend_nx_int }
+      \l__figmint_legend_first_column_int \l__figmint_legend_last_column_int
+    \__figmint_legend_interval:nnnnNN { \int_min:nn {#2} {#4} } { \int_max:nn {#2} {#4} }
+      { \g__figmint_legend_height_int } { \g__figmint_legend_ny_int }
+      \l__figmint_legend_first_row_int \l__figmint_legend_last_row_int
+    \int_step_variable:nnNn
+      { \l__figmint_legend_first_row_int } { \l__figmint_legend_last_row_int }
+      \l__figmint_legend_row_tl
+      {
+        \int_step_inline:nnn
+          { \l__figmint_legend_first_column_int } { \l__figmint_legend_last_column_int }
+          { \__figmint_legend_mark:nn {##1} { \l__figmint_legend_row_tl } }
+      }
+  }
+% A segment occupies the cells that contain its points sampled at steps of at
+% most half a cell along both axes.
+\cs_new_protected:Npn \__figmint_legend_segment:nnnn #1#2#3#4
+  {
+    \bool_if:nF
+      {
+        \int_compare_p:n { \int_max:nn {#1} {#3} < 0 }
+        || \int_compare_p:n { \int_max:nn {#2} {#4} < 0 }
+        || \int_compare_p:n { \int_min:nn {#1} {#3} > \g__figmint_legend_width_int }
+        || \int_compare_p:n { \int_min:nn {#2} {#4} > \g__figmint_legend_height_int }
+      }
+      {
+        \int_set:Nn \l__figmint_legend_steps_int
+          {
+            \int_max:nn { 1 }
+              {
+                \__figmint_legend_ceil_div:nn
+                  { \int_max:nn { \int_abs:n { #3 - #1 } } { \int_abs:n { #4 - #2 } } }
+                  { \c__figmint_legend_half_cell_int }
+              }
+          }
+        \int_step_inline:nnn { 0 } { \l__figmint_legend_steps_int }
+          {
+            \__figmint_legend_mark_point:nn
+              { #1 + ( #3 - #1 ) * ##1 / \l__figmint_legend_steps_int }
+              { #2 + ( #4 - #2 ) * ##1 / \l__figmint_legend_steps_int }
+          }
+      }
+  }
+% Filled paths occupy, besides their boundary, the cells whose centers lie
+% inside under the even-odd rule. Every edge adds its crossings with the
+% horizontal lines through the cell centers of each row it spans.
+\cs_new_protected:Npn \__figmint_legend_crossings:nnnn #1#2#3#4
+  {
+    \int_compare:nNnF {#2} = {#4}
+      {
+        \int_set:Nn \l__figmint_legend_first_int
+          {
+            \int_max:nn { 0 }
+              {
+                \__figmint_legend_ceil_div:nn
+                  { \int_min:nn {#2} {#4} - \c__figmint_legend_half_cell_int }
+                  { \c__figmint_legend_cell_int }
+              }
+          }
+        \int_set:Nn \l__figmint_legend_last_int
+          {
+            \int_min:nn { \g__figmint_legend_ny_int - 1 }
+              {
+                \__figmint_legend_ceil_div:nn
+                  { \int_max:nn {#2} {#4} - \c__figmint_legend_half_cell_int }
+                  { \c__figmint_legend_cell_int }
+                - 1
+              }
+          }
+        \int_step_inline:nnn { \l__figmint_legend_first_int } { \l__figmint_legend_last_int }
+          {
+            \__figmint_legend_add_crossing:nn {##1}
+              {
+                #1 + ( ##1 * \c__figmint_legend_cell_int
+                + \c__figmint_legend_half_cell_int - ( #2 ) ) * ( #3 - #1 ) / ( #4 - #2 )
+              }
+          }
+      }
+  }
+\cs_new_protected:Npn \__figmint_legend_add_crossing:nn #1#2
+  {
+    \seq_if_exist:cF { l__figmint_legend_row_ #1 _seq }
+      { \seq_new:c { l__figmint_legend_row_ #1 _seq } }
+    \seq_if_empty:cT { l__figmint_legend_row_ #1 _seq }
+      { \seq_put_right:Nn \l__figmint_legend_rows_seq {#1} }
+    \seq_put_right:cx { l__figmint_legend_row_ #1 _seq } { \int_eval:n {#2} }
+  }
+\cs_new_protected:Npn \__figmint_legend_fill_rows:
+  {
+    \seq_map_inline:Nn \l__figmint_legend_rows_seq
+      {
+        \seq_set_eq:Nc \l__figmint_legend_crossings_seq { l__figmint_legend_row_ ##1 _seq }
+        \seq_sort:Nn \l__figmint_legend_crossings_seq
+          {
+            \int_compare:nNnTF {####1} > {####2}
+              { \sort_return_swapped: }
+              { \sort_return_same: }
+          }
+        \bool_set_false:N \l__figmint_legend_inside_bool
+        \seq_map_inline:Nn \l__figmint_legend_crossings_seq
+          {
+            \bool_if:NTF \l__figmint_legend_inside_bool
+              {
+                \__figmint_legend_fill_span:nnn {##1} { \l__figmint_legend_span_int } {####1}
+                \bool_set_false:N \l__figmint_legend_inside_bool
+              }
+              {
+                \int_set:Nn \l__figmint_legend_span_int {####1}
+                \bool_set_true:N \l__figmint_legend_inside_bool
+              }
+          }
+      }
+  }
+% Cells of row #1 whose centers lie in [#2, #3).
+\cs_new_protected:Npn \__figmint_legend_fill_span:nnn #1#2#3
+  {
+    \int_step_inline:nnn
+      {
+        \int_max:nn { 0 }
+          {
+            \__figmint_legend_ceil_div:nn { #2 - \c__figmint_legend_half_cell_int }
+              { \c__figmint_legend_cell_int }
+          }
+      }
+      {
+        \int_min:nn { \g__figmint_legend_nx_int - 1 }
+          {
+            \__figmint_legend_ceil_div:nn { #3 - \c__figmint_legend_half_cell_int }
+              { \c__figmint_legend_cell_int }
+            - 1
+          }
+      }
+      { \__figmint_legend_mark:nn {##1} {#1} }
+  }
+
+% Soft path traversal. Curves contribute their control polygons, and a filled
+% subpath is closed implicitly.
+\cs_new_protected:Npn \__figmint_legend_edge:nn #1#2
+  {
+    \int_set:Nn \l__figmint_legend_next_x_int {#1}
+    \int_set:Nn \l__figmint_legend_next_y_int {#2}
+    \__figmint_legend_segment:nnnn
+      { \l__figmint_legend_x_int } { \l__figmint_legend_y_int }
+      { \l__figmint_legend_next_x_int } { \l__figmint_legend_next_y_int }
+    \bool_if:NT \l__figmint_legend_fill_bool
+      {
+        \__figmint_legend_crossings:nnnn
+          { \l__figmint_legend_x_int } { \l__figmint_legend_y_int }
+          { \l__figmint_legend_next_x_int } { \l__figmint_legend_next_y_int }
+      }
+    \int_set_eq:NN \l__figmint_legend_x_int \l__figmint_legend_next_x_int
+    \int_set_eq:NN \l__figmint_legend_y_int \l__figmint_legend_next_y_int
+  }
+\cs_new_protected:Npn \__figmint_legend_close:
+  {
+    \bool_if:NT \l__figmint_legend_open_bool
+      {
+        \__figmint_legend_edge:nn
+          { \l__figmint_legend_start_x_int } { \l__figmint_legend_start_y_int }
+        \bool_set_false:N \l__figmint_legend_open_bool
+      }
+  }
+\cs_new_protected:Npn \__figmint_legend_end_subpath:
+  {
+    \bool_if:NT \l__figmint_legend_fill_bool { \__figmint_legend_close: }
+    \bool_set_false:N \l__figmint_legend_open_bool
+  }
+\cs_new_protected:Npn \__figmint_legend_moveto:nn #1#2
+  {
+    \__figmint_legend_end_subpath:
+    \int_set:Nn \l__figmint_legend_x_int
+      { \dim_to_decimal_in_sp:n {#1} - \g__figmint_legend_x_origin_int }
+    \int_set:Nn \l__figmint_legend_y_int
+      { \dim_to_decimal_in_sp:n {#2} - \g__figmint_legend_y_origin_int }
+    \int_set_eq:NN \l__figmint_legend_start_x_int \l__figmint_legend_x_int
+    \int_set_eq:NN \l__figmint_legend_start_y_int \l__figmint_legend_y_int
+    \bool_set_true:N \l__figmint_legend_open_bool
+  }
+\cs_new_protected:Npn \__figmint_legend_lineto:nn #1#2
+  {
+    \__figmint_legend_edge:nn
+      { \dim_to_decimal_in_sp:n {#1} - \g__figmint_legend_x_origin_int }
+      { \dim_to_decimal_in_sp:n {#2} - \g__figmint_legend_y_origin_int }
+  }
+\cs_new_protected:Npn \__figmint_legend_rectcorner:nn #1#2
+  {
+    \int_set:Nn \l__figmint_legend_corner_x_int
+      { \dim_to_decimal_in_sp:n {#1} - \g__figmint_legend_x_origin_int }
+    \int_set:Nn \l__figmint_legend_corner_y_int
+      { \dim_to_decimal_in_sp:n {#2} - \g__figmint_legend_y_origin_int }
+  }
+\cs_new_protected:Npn \__figmint_legend_rectsize:nn #1#2
+  {
+    \__figmint_legend_end_subpath:
+    \int_set_eq:NN \l__figmint_legend_x_int \l__figmint_legend_corner_x_int
+    \int_set_eq:NN \l__figmint_legend_y_int \l__figmint_legend_corner_y_int
+    \int_set_eq:NN \l__figmint_legend_start_x_int \l__figmint_legend_corner_x_int
+    \int_set_eq:NN \l__figmint_legend_start_y_int \l__figmint_legend_corner_y_int
+    \bool_set_true:N \l__figmint_legend_open_bool
+    \__figmint_legend_edge:nn
+      { \l__figmint_legend_corner_x_int + \dim_to_decimal_in_sp:n {#1} }
+      { \l__figmint_legend_corner_y_int }
+    \__figmint_legend_edge:nn
+      { \l__figmint_legend_corner_x_int + \dim_to_decimal_in_sp:n {#1} }
+      { \l__figmint_legend_corner_y_int + \dim_to_decimal_in_sp:n {#2} }
+    \__figmint_legend_edge:nn
+      { \l__figmint_legend_corner_x_int }
+      { \l__figmint_legend_corner_y_int + \dim_to_decimal_in_sp:n {#2} }
+    \__figmint_legend_close:
+  }
+% Rasterizes the current soft path according to the stroke and fill flags.
+\cs_new_protected:Npn \__figmint_legend_capture_path:
+  {
+    \bool_lazy_or:nnT { \l__figmint_legend_stroke_bool } { \l__figmint_legend_fill_bool }
+      {
+        \pgfsyssoftpath@getcurrentpath \l__figmint_legend_path_tl
+        \group_begin:
+          \cs_set_protected:Npn \pgfsyssoftpath@movetotoken ##1##2
+            { \__figmint_legend_moveto:nn {##1} {##2} }
+          \cs_set_protected:Npn \pgfsyssoftpath@linetotoken ##1##2
+            { \__figmint_legend_lineto:nn {##1} {##2} }
+          \cs_set_eq:NN \pgfsyssoftpath@curvetosupportatoken \pgfsyssoftpath@linetotoken
+          \cs_set_eq:NN \pgfsyssoftpath@curvetosupportbtoken \pgfsyssoftpath@linetotoken
+          \cs_set_eq:NN \pgfsyssoftpath@curvetotoken \pgfsyssoftpath@linetotoken
+          \cs_set_protected:Npn \pgfsyssoftpath@rectcornertoken ##1##2
+            { \__figmint_legend_rectcorner:nn {##1} {##2} }
+          \cs_set_protected:Npn \pgfsyssoftpath@rectsizetoken ##1##2
+            { \__figmint_legend_rectsize:nn {##1} {##2} }
+          \cs_set_protected:Npn \pgfsyssoftpath@closepathtoken ##1##2
+            { \__figmint_legend_close: }
+          \cs_set_eq:NN \pgfsyssoftpath@specialroundtoken \use_none:nn
+          \l__figmint_legend_path_tl
+          \__figmint_legend_end_subpath:
+          \bool_if:NT \l__figmint_legend_fill_bool { \__figmint_legend_fill_rows: }
+        \group_end:
+      }
+  }
+\cs_new_protected:Npn \__figmint_legend_capture_usage:n #1
+  {
+    \bool_set_false:N \l__figmint_legend_stroke_bool
+    \bool_set_false:N \l__figmint_legend_fill_bool
+    \clist_map_inline:nn {#1}
+      {
+        \str_case:nn {##1}
+          {
+            { stroke } { \bool_set_true:N \l__figmint_legend_stroke_bool }
+            { draw } { \bool_set_true:N \l__figmint_legend_stroke_bool }
+            { fill } { \bool_set_true:N \l__figmint_legend_fill_bool }
+          }
+      }
+    \__figmint_legend_capture_path:
+  }
+\cs_new_protected:Npn \__figmint_legend_capture_quick:NN #1#2
+  {
+    \bool_set_eq:NN \l__figmint_legend_stroke_bool #1
+    \bool_set_eq:NN \l__figmint_legend_fill_bool #2
+    \__figmint_legend_capture_path:
+  }
+% A node occupies the bounding box of its shape.
+\cs_new_protected:Npn \__figmint_legend_capture_node:nn #1#2
+  {
+    \bool_lazy_and:nnT
+      { \cs_if_exist_p:c { pgf@anchor@ #1 @south~west } }
+      { \cs_if_exist_p:c { pgf@anchor@ #1 @north~east } }
+      {
+        \int_set:Nn \l__figmint_legend_left_int { \c_max_int }
+        \int_set:Nn \l__figmint_legend_right_int { - \c_max_int }
+        \int_set:Nn \l__figmint_legend_bottom_int { \c_max_int }
+        \int_set:Nn \l__figmint_legend_top_int { - \c_max_int }
+        \clist_map_inline:nn { south~west , south~east , north~west , north~east }
+          {
+            \cs_if_exist:cT { pgf@anchor@ #1 @ ##1 }
+              {
+                \pgfpointtransformed { \pgfpointanchor {#2} {##1} }
+                \int_set:Nn \l__figmint_legend_x_int
+                  { \dim_to_decimal_in_sp:n { \pgf@x } - \g__figmint_legend_x_origin_int }
+                \int_set:Nn \l__figmint_legend_y_int
+                  { \dim_to_decimal_in_sp:n { \pgf@y } - \g__figmint_legend_y_origin_int }
+                \int_set:Nn \l__figmint_legend_left_int
+                  { \int_min:nn { \l__figmint_legend_left_int } { \l__figmint_legend_x_int } }
+                \int_set:Nn \l__figmint_legend_right_int
+                  { \int_max:nn { \l__figmint_legend_right_int } { \l__figmint_legend_x_int } }
+                \int_set:Nn \l__figmint_legend_bottom_int
+                  { \int_min:nn { \l__figmint_legend_bottom_int } { \l__figmint_legend_y_int } }
+                \int_set:Nn \l__figmint_legend_top_int
+                  { \int_max:nn { \l__figmint_legend_top_int } { \l__figmint_legend_y_int } }
+              }
+          }
+        \__figmint_legend_rectangle:nnnn
+          { \l__figmint_legend_left_int } { \l__figmint_legend_bottom_int }
+          { \l__figmint_legend_right_int } { \l__figmint_legend_top_int }
+      }
+  }
+% A shaded surface occupies the box of its vertices, which PGFPlots keeps in
+% canvas coordinates (see the patch above).
+\cs_new_protected:Npn \__figmint_legend_capture_surface:
+  {
+    \pgfplotslibrarysurf@corner@sw
+    \int_set:Nn \l__figmint_legend_left_int
+      { \dim_to_decimal_in_sp:n { \pgf@x } - \g__figmint_legend_x_origin_int }
+    \int_set:Nn \l__figmint_legend_bottom_int
+      { \dim_to_decimal_in_sp:n { \pgf@y } - \g__figmint_legend_y_origin_int }
+    \pgfplotslibrarysurf@corner@ne
+    \__figmint_legend_rectangle:nnnn
+      { \l__figmint_legend_left_int } { \l__figmint_legend_bottom_int }
+      { \dim_to_decimal_in_sp:n { \pgf@x } - \g__figmint_legend_x_origin_int }
+      { \dim_to_decimal_in_sp:n { \pgf@y } - \g__figmint_legend_y_origin_int }
+  }
+
+% Collection only runs in the picture of the axis, so pictures nested inside
+% nodes or shadings, whose coordinates are local, never contribute paths.
+\prg_new_protected_conditional:Npnn \__figmint_legend_if_capturing: { T , TF }
+  {
+    \bool_lazy_and:nnTF
+      { \g__figmint_legend_capture_bool }
+      { \tl_if_eq_p:NN \pgfpictureid \g__figmint_legend_picture_tl }
+      { \prg_return_true: }
+      { \prg_return_false: }
+  }
+\cs_new_eq:NN \__figmint_legend_pgfusepath:n \pgfusepath
+\cs_new_eq:NN \__figmint_legend_pgfusepathqstroke: \pgfusepathqstroke
+\cs_new_eq:NN \__figmint_legend_pgfusepathqfill: \pgfusepathqfill
+\cs_new_eq:NN \__figmint_legend_pgfusepathqfillstroke: \pgfusepathqfillstroke
+\cs_new_eq:NN \__figmint_legend_pgfmultipartnode:nnnn \pgfmultipartnode
+\cs_gset_protected:Npn \pgfusepath #1
+  {
+    \__figmint_legend_if_capturing:T { \__figmint_legend_capture_usage:n {#1} }
+    \__figmint_legend_pgfusepath:n {#1}
+  }
+\cs_gset_protected:Npn \pgfusepathqstroke
+  {
+    \__figmint_legend_if_capturing:T
+      { \__figmint_legend_capture_quick:NN \c_true_bool \c_false_bool }
+    \__figmint_legend_pgfusepathqstroke:
+  }
+\cs_gset_protected:Npn \pgfusepathqfill
+  {
+    \__figmint_legend_if_capturing:T
+      { \__figmint_legend_capture_quick:NN \c_false_bool \c_true_bool }
+    \__figmint_legend_pgfusepathqfill:
+  }
+\cs_gset_protected:Npn \pgfusepathqfillstroke
+  {
+    \__figmint_legend_if_capturing:T
+      { \__figmint_legend_capture_quick:NN \c_true_bool \c_true_bool }
+    \__figmint_legend_pgfusepathqfillstroke:
+  }
+% PGF only keeps the anchors of named nodes, so an unnamed node gets a
+% generated name while ink is collected.
+\cs_new_protected:Npn \__figmint_legend_named_node:nnnn #1#2#3#4
+  {
+    \__figmint_legend_pgfmultipartnode:nnnn {#1} {#2} {#3} {#4}
+    \__figmint_legend_capture_node:nn {#1} {#3}
+  }
+\cs_generate_variant:Nn \__figmint_legend_named_node:nnnn { nnx }
+\cs_gset_protected:Npn \pgfmultipartnode #1#2#3#4
+  {
+    \__figmint_legend_if_capturing:TF
+      {
+        \int_gincr:N \g__figmint_legend_node_int
+        \__figmint_legend_named_node:nnxn {#1} {#2}
+          {
+            \tl_if_empty:eTF {#3}
+              { figmint@node@ \int_use:N \g__figmint_legend_node_int }
+              {#3}
+          }
+          {#4}
+      }
+      { \__figmint_legend_pgfmultipartnode:nnnn {#1} {#2} {#3} {#4} }
+  }
+
+% Legend entries that PGFPlots will draw: entries paired with plot
+% specifications, skipping empty entries, as \pgfplots@createlegend does.
+\cs_new_protected:Npn \__figmint_legend_count_entries:
+  {
+    \group_begin:
+      \pgfplotslistcheckempty \pgfplots@legend
+      \ifpgfplotslistempty
+        \pgfkeysgetvalue { /pgfplots/legend~entries } \pgfplots@legend
+        \exp_after:wN \pgfplots@assign@list \exp_after:wN \pgfplots@legend
+          \exp_after:wN { \pgfplots@legend }
+      \fi
+      \int_zero:N \l__figmint_legend_count_int
+      \bool_set_true:N \l__figmint_legend_more_bool
+      \bool_while_do:Nn \l__figmint_legend_more_bool
+        {
+          \bool_set_false:N \l__figmint_legend_more_bool
+          \pgfplotslistcheckempty \pgfplots@legend
+          \ifpgfplotslistempty \else
+            \pgfplotslistcheckempty \pgfplots@plotspeclist
+            \ifpgfplotslistempty \else
+              \bool_set_true:N \l__figmint_legend_more_bool
             \fi
-        \fi
-    \fi
+          \fi
+          \bool_if:NT \l__figmint_legend_more_bool
+            {
+              \pgfplotslistpopfront \pgfplots@legend \to \l__figmint_legend_entry_tl
+              \pgfplotslistpopfront \pgfplots@plotspeclist \to \l__figmint_legend_spec_tl
+              \tl_if_empty:NF \l__figmint_legend_entry_tl
+                { \int_incr:N \l__figmint_legend_count_int }
+            }
+        }
+      \int_gset_eq:NN \g__figmint_legend_entries_int \l__figmint_legend_count_int
+    \group_end:
+  }
+
+\cs_new_protected:Npn \__figmint_legend_setup_grid:
+  {
+    \tl_gset:Nx \g__figmint_legend_picture_tl { \pgfpictureid }
+    \pgfpointtransformed { \pgfplotspointdescriptionxy { 0 } { 0 } }
+    \int_gset:Nn \g__figmint_legend_x_origin_int { \dim_to_decimal_in_sp:n { \pgf@x } }
+    \int_gset:Nn \g__figmint_legend_y_origin_int { \dim_to_decimal_in_sp:n { \pgf@y } }
+    \pgfpointtransformed { \pgfplotspointdescriptionxy { 1 } { 1 } }
+    \int_gset:Nn \g__figmint_legend_width_int
+      { \dim_to_decimal_in_sp:n { \pgf@x } - \g__figmint_legend_x_origin_int }
+    \int_gset:Nn \g__figmint_legend_height_int
+      { \dim_to_decimal_in_sp:n { \pgf@y } - \g__figmint_legend_y_origin_int }
+    \int_gset:Nn \g__figmint_legend_nx_int
+      {
+        \__figmint_legend_ceil_div:nn { \g__figmint_legend_width_int }
+          { \c__figmint_legend_cell_int }
+      }
+    \int_gset:Nn \g__figmint_legend_ny_int
+      {
+        \__figmint_legend_ceil_div:nn { \g__figmint_legend_height_int }
+          { \c__figmint_legend_cell_int }
+      }
+    \__figmint_legend_reserve:n
+      { ( \g__figmint_legend_nx_int + 1 ) * ( \g__figmint_legend_ny_int + 1 ) }
+    \int_gincr:N \g__figmint_legend_stamp_int
+  }
+
+% Runs once PGFPlots has drawn the axis background, grid, and the axis lines
+% below the plots, and decides whether this axis collects ink.
+\cs_new_protected:Npn \__figmint_legend_begin_axis:
+  {
+    \bool_gset_false:N \g__figmint_legend_pending_bool
+    \bool_gset_false:N \g__figmint_legend_capture_bool
+    \pgfkeysgetvalue { /pgfplots/figmint~legend~mode } \l__figmint_legend_mode_tl
+    \str_case:VnF \l__figmint_legend_mode_tl
+      {
+        { best } { \__figmint_legend_prepare: }
+        { fixed } { \__figmint_legend_prepare: }
+        { manual } { }
+      }
+      { \msg_error:nnV { figmint } { legend-mode } \l__figmint_legend_mode_tl }
+  }
+\cs_new_protected:Npn \__figmint_legend_prepare:
+  {
+    \pgfkeysgetvalue { /pgfplots/legend~to~name } \l__figmint_legend_entry_tl
+    \tl_if_empty:NT \l__figmint_legend_entry_tl
+      {
+        \__figmint_legend_count_entries:
+        \int_compare:nNnT { \g__figmint_legend_entries_int } > { 0 }
+          {
+            \__figmint_legend_setup_grid:
+            \bool_gset_true:N \g__figmint_legend_pending_bool
+            \bool_gset_true:N \g__figmint_legend_capture_bool
+          }
+      }
+  }
+\cs_new_protected:Npn \__figmint_legend_pause:
+  { \bool_gset_false:N \g__figmint_legend_capture_bool }
+\cs_new_protected:Npn \__figmint_legend_resume:
+  {
+    \bool_if:NT \g__figmint_legend_pending_bool
+      { \bool_gset_true:N \g__figmint_legend_capture_bool }
+  }
+
+\cs_new_protected:Npn \__figmint_legend_build_table:
+  {
+    \int_step_inline:nnn { 1 } { \g__figmint_legend_nx_int + 1 }
+      { \intarray_gset:cnn { \g__figmint_legend_table_tl } {##1} { 0 } }
+    \int_step_variable:nNn { \g__figmint_legend_ny_int } \l__figmint_legend_row_tl
+      {
+        \int_zero:N \l__figmint_legend_sum_int
+        \intarray_gset:cnn { \g__figmint_legend_table_tl }
+          { \l__figmint_legend_row_tl * ( \g__figmint_legend_nx_int + 1 ) + 1 } { 0 }
+        \int_step_variable:nNn { \g__figmint_legend_nx_int } \l__figmint_legend_column_tl
+          {
+            \int_compare:nNnT
+              {
+                \intarray_item:cn { \g__figmint_legend_cells_tl }
+                  {
+                    ( \l__figmint_legend_row_tl - 1 ) * \g__figmint_legend_nx_int
+                    + \l__figmint_legend_column_tl
+                  }
+              }
+              = { \g__figmint_legend_stamp_int }
+              { \int_incr:N \l__figmint_legend_sum_int }
+            \intarray_gset:cnn { \g__figmint_legend_table_tl }
+              {
+                \l__figmint_legend_row_tl * ( \g__figmint_legend_nx_int + 1 )
+                + \l__figmint_legend_column_tl + 1
+              }
+              {
+                \__figmint_legend_table:nn
+                  { \l__figmint_legend_column_tl } { \l__figmint_legend_row_tl - 1 }
+                + \l__figmint_legend_sum_int
+              }
+          }
+        \int_set:Nn \l__figmint_legend_nearest_int { -1 }
+        \int_step_variable:nNn { \g__figmint_legend_nx_int } \l__figmint_legend_column_tl
+          { \__figmint_legend_nearest:N \g__figmint_legend_left_tl }
+        \int_set_eq:NN \l__figmint_legend_nearest_int \g__figmint_legend_nx_int
+        \int_step_variable:nnnNn { \g__figmint_legend_nx_int } { -1 } { 1 }
+          \l__figmint_legend_column_tl
+          { \__figmint_legend_nearest:N \g__figmint_legend_right_tl }
+      }
+  }
+% Records, into the array named by #1, the nearest occupied column seen so
+% far while sweeping the current row.
+\cs_new_protected:Npn \__figmint_legend_nearest:N #1
+  {
+    \int_compare:nNnT
+      {
+        \intarray_item:cn { \g__figmint_legend_cells_tl }
+          {
+            ( \l__figmint_legend_row_tl - 1 ) * \g__figmint_legend_nx_int
+            + \l__figmint_legend_column_tl
+          }
+      }
+      = { \g__figmint_legend_stamp_int }
+      { \int_set:Nn \l__figmint_legend_nearest_int { \l__figmint_legend_column_tl - 1 } }
+    \intarray_gset:cnn {#1}
+      {
+        ( \l__figmint_legend_row_tl - 1 ) * \g__figmint_legend_nx_int
+        + \l__figmint_legend_column_tl
+      }
+      { \l__figmint_legend_nearest_int }
+  }
+
+% Typesets the legend with #1 columns exactly as PGFPlots will, into a box,
+% and stores its size in sp. \pgfplots@createlegend consumes the global entry
+% and plot lists, so they are restored afterwards.
+\cs_new_protected:Npn \__figmint_legend_measure:n #1
+  {
+    \group_begin:
+      \pgfplotsset
+        {
+          legend~columns = #1 ,
+          legend~cell~align = left ,
+          transpose~legend = false ,
+          legend~style = { at = { ( 0pt , 0pt ) } } ,
+        }
+      \cs_set_eq:NN \pgfplots@already@computed@legend@node \pgfutil@empty
+      \cs_set_protected:Npn \pgfplotsonlayer ##1##2
+        { \hbox_gset:Nw \g__figmint_legend_box \pgfinterruptpicture \tikzpicture }
+      \cs_set_protected:Npn \endpgfplotsonlayer
+        { \endtikzpicture \endpgfinterruptpicture \hbox_gset_end: }
+      \pgfplots@createlegend
+    \group_end:
+    \tl_gset_eq:NN \pgfplots@legend \g__figmint_legend_saved_entries_tl
+    \tl_gset_eq:NN \pgfplots@plotspeclist \g__figmint_legend_saved_specs_tl
+    \int_set:Nn \l__figmint_legend_width_int
+      { \dim_to_decimal_in_sp:n { \box_wd:N \g__figmint_legend_box } }
+    \int_set:Nn \l__figmint_legend_height_int
+      {
+        \dim_to_decimal_in_sp:n
+          { \box_ht:N \g__figmint_legend_box + \box_dp:N \g__figmint_legend_box }
+      }
+  }
+
+% Squared distance, in cells, between the centers of the nearest cells of a
+% free candidate box and of the ink; \c_max_int when the axes hold no ink. Row
+% by row, the nearest ink lies inside the column span of the box or at the
+% nearest occupied column on either side of it.
+\cs_new_protected:Npn \__figmint_legend_clearance:
+  {
+    \int_set:Nn \l__figmint_legend_candidate_clearance_int { \c_max_int }
+    \int_step_inline:nnn { 0 } { \g__figmint_legend_ny_int - 1 }
+      {
+        \int_set:Nn \l__figmint_legend_gap_y_int
+          {
+            \int_max:nn { 0 }
+              {
+                \int_max:nn { ##1 - \l__figmint_legend_last_row_int }
+                  { \l__figmint_legend_first_row_int - ##1 }
+              }
+          }
+        \int_compare:nNnT
+          { \l__figmint_legend_gap_y_int * \l__figmint_legend_gap_y_int }
+          < { \l__figmint_legend_candidate_clearance_int }
+          { \__figmint_legend_row_gap:n {##1} }
+      }
+  }
+\cs_new_protected:Npn \__figmint_legend_row_gap:n #1
+  {
+    \int_compare:nNnTF
+      {
+        \__figmint_legend_count:nnnn
+          { \l__figmint_legend_first_column_int } { \l__figmint_legend_last_column_int }
+          {#1} {#1}
+      }
+      > { 0 }
+      { \int_zero:N \l__figmint_legend_gap_x_int }
+      {
+        \int_set:Nn \l__figmint_legend_gap_x_int { \c_max_int }
+        \int_compare:nNnT { \l__figmint_legend_first_column_int } > { 0 }
+          {
+            \int_set:Nn \l__figmint_legend_nearest_int
+              {
+                \intarray_item:cn { \g__figmint_legend_left_tl }
+                  { ( #1 ) * \g__figmint_legend_nx_int + \l__figmint_legend_first_column_int }
+              }
+            \int_compare:nNnT { \l__figmint_legend_nearest_int } > { -1 }
+              {
+                \int_set:Nn \l__figmint_legend_gap_x_int
+                  { \l__figmint_legend_first_column_int - \l__figmint_legend_nearest_int }
+              }
+          }
+        \int_compare:nNnT
+          { \l__figmint_legend_last_column_int } < { \g__figmint_legend_nx_int - 1 }
+          {
+            \int_set:Nn \l__figmint_legend_nearest_int
+              {
+                \intarray_item:cn { \g__figmint_legend_right_tl }
+                  { ( #1 ) * \g__figmint_legend_nx_int + \l__figmint_legend_last_column_int + 2 }
+              }
+            \int_compare:nNnT { \l__figmint_legend_nearest_int } < { \g__figmint_legend_nx_int }
+              {
+                \int_set:Nn \l__figmint_legend_gap_x_int
+                  {
+                    \int_min:nn { \l__figmint_legend_gap_x_int }
+                      { \l__figmint_legend_nearest_int - \l__figmint_legend_last_column_int }
+                  }
+              }
+          }
+      }
+    \int_compare:nNnT { \l__figmint_legend_gap_x_int } < { \c_max_int }
+      {
+        \int_set:Nn \l__figmint_legend_candidate_clearance_int
+          {
+            \int_min:nn { \l__figmint_legend_candidate_clearance_int }
+              {
+                \l__figmint_legend_gap_x_int * \l__figmint_legend_gap_x_int
+                + \l__figmint_legend_gap_y_int * \l__figmint_legend_gap_y_int
+              }
+          }
+      }
+  }
+% Largest growth factor, in units of 1 / \c__figmint_legend_scale_unit_int,
+% by which the candidate box scales about its anchor while staying free of
+% ink; \c_max_int if the box can grow to cover the axes.
+\cs_new_protected:Npn \__figmint_legend_scaled_count:nN #1#2
+  {
+    \__figmint_legend_box_count:nnnnN
+      {
+        \l__figmint_legend_anchor_x_int
+        - \l__figmint_legend_extent_left_int * ( #1 ) / \c__figmint_legend_scale_unit_int
+      }
+      {
+        \l__figmint_legend_anchor_x_int
+        + \l__figmint_legend_extent_right_int * ( #1 ) / \c__figmint_legend_scale_unit_int
+      }
+      {
+        \l__figmint_legend_anchor_y_int
+        - \l__figmint_legend_extent_down_int * ( #1 ) / \c__figmint_legend_scale_unit_int
+      }
+      {
+        \l__figmint_legend_anchor_y_int
+        + \l__figmint_legend_extent_up_int * ( #1 ) / \c__figmint_legend_scale_unit_int
+      }
+      #2
+  }
+\cs_new:Npn \__figmint_legend_cover:nn #1#2
+  {
+    \int_compare:nNnTF {#2} > { 0 }
+      { \int_eval:n { ( #1 ) * \c__figmint_legend_scale_unit_int / ( #2 ) + 1 } }
+      { 0 }
+  }
+\cs_new_protected:Npn \__figmint_legend_margin:nn #1#2
+  {
+    \int_set:Nn \l__figmint_legend_extent_left_int
+      { \int_div_truncate:nn { #1 * \l__figmint_legend_width_int } { 2 } }
+    \int_set:Nn \l__figmint_legend_extent_right_int
+      { \l__figmint_legend_width_int - \l__figmint_legend_extent_left_int }
+    \int_set:Nn \l__figmint_legend_extent_down_int
+      { \int_div_truncate:nn { #2 * \l__figmint_legend_height_int } { 2 } }
+    \int_set:Nn \l__figmint_legend_extent_up_int
+      { \l__figmint_legend_height_int - \l__figmint_legend_extent_down_int }
+    \int_set:Nn \l__figmint_legend_anchor_x_int
+      { \l__figmint_legend_left_int + \l__figmint_legend_extent_left_int }
+    \int_set:Nn \l__figmint_legend_anchor_y_int
+      { \l__figmint_legend_bottom_int + \l__figmint_legend_extent_down_int }
+    \int_set:Nn \l__figmint_legend_high_int
+      {
+        \int_max:nn
+          {
+            \int_max:nn { \c__figmint_legend_scale_unit_int }
+              {
+                \__figmint_legend_cover:nn
+                  { \l__figmint_legend_anchor_x_int } { \l__figmint_legend_extent_left_int }
+              }
+          }
+          {
+            \int_max:nn
+              {
+                \__figmint_legend_cover:nn
+                  { \g__figmint_legend_width_int - \l__figmint_legend_anchor_x_int }
+                  { \l__figmint_legend_extent_right_int }
+              }
+              {
+                \int_max:nn
+                  {
+                    \__figmint_legend_cover:nn
+                      { \l__figmint_legend_anchor_y_int } { \l__figmint_legend_extent_down_int }
+                  }
+                  {
+                    \__figmint_legend_cover:nn
+                      { \g__figmint_legend_height_int - \l__figmint_legend_anchor_y_int }
+                      { \l__figmint_legend_extent_up_int }
+                  }
+              }
+          }
+      }
+    \__figmint_legend_scaled_count:nN { \l__figmint_legend_high_int } \l__figmint_legend_count_int
+    \int_compare:nNnTF { \l__figmint_legend_count_int } = { 0 }
+      { \int_set:Nn \l__figmint_legend_candidate_margin_int { \c_max_int } }
+      {
+        \int_set_eq:NN \l__figmint_legend_low_int \c__figmint_legend_scale_unit_int
+        \int_while_do:nNnn
+          { \l__figmint_legend_high_int - \l__figmint_legend_low_int } > { 1 }
+          {
+            \int_set:Nn \l__figmint_legend_middle_int
+              { \int_div_truncate:nn { \l__figmint_legend_low_int + \l__figmint_legend_high_int } { 2 } }
+            \__figmint_legend_scaled_count:nN { \l__figmint_legend_middle_int }
+              \l__figmint_legend_count_int
+            \int_compare:nNnTF { \l__figmint_legend_count_int } = { 0 }
+              { \int_set_eq:NN \l__figmint_legend_low_int \l__figmint_legend_middle_int }
+              { \int_set_eq:NN \l__figmint_legend_high_int \l__figmint_legend_middle_int }
+          }
+        \int_set_eq:NN \l__figmint_legend_candidate_margin_int \l__figmint_legend_low_int
+      }
+  }
+
+\cs_new_protected:Npn \__figmint_legend_compare_score:nn #1#2
+  {
+    \int_compare:nNnF
+      { \int_use:c { l__figmint_legend_candidate_ #1 _int } }
+      = { \int_use:c { g__figmint_legend_best_ #1 _int } }
+      {
+        \int_compare:nNnT
+          { \int_use:c { l__figmint_legend_candidate_ #1 _int } }
+          #2 { \int_use:c { g__figmint_legend_best_ #1 _int } }
+          { \bool_set_true:N \l__figmint_legend_better_bool }
+        \tl_map_break:
+      }
+  }
+% Scores the candidate with anchor rank #1, PGF anchor #2, anchor position #3
+% and #4 in halves of the axes size, and complexity #5, for the legend size
+% measured last.
+\cs_new_protected:Npn \__figmint_legend_try:nnnnn #1#2#3#4#5
+  {
+    \bool_lazy_and:nnT
+      { \int_compare_p:n { \l__figmint_legend_width_int <= \g__figmint_legend_width_int } }
+      { \int_compare_p:n { \l__figmint_legend_height_int <= \g__figmint_legend_height_int } }
+      {
+        \int_set:Nn \l__figmint_legend_left_int
+          {
+            \int_div_truncate:nn
+              { #3 * ( \g__figmint_legend_width_int - \l__figmint_legend_width_int ) } { 2 }
+          }
+        \int_set:Nn \l__figmint_legend_bottom_int
+          {
+            \int_div_truncate:nn
+              { #4 * ( \g__figmint_legend_height_int - \l__figmint_legend_height_int ) } { 2 }
+          }
+        \__figmint_legend_box_count:nnnnN
+          { \l__figmint_legend_left_int }
+          { \l__figmint_legend_left_int + \l__figmint_legend_width_int }
+          { \l__figmint_legend_bottom_int }
+          { \l__figmint_legend_bottom_int + \l__figmint_legend_height_int }
+          \l__figmint_legend_candidate_badness_int
+        \int_compare:nNnTF { \l__figmint_legend_candidate_badness_int } = { 0 }
+          {
+            \__figmint_legend_clearance:
+            \__figmint_legend_margin:nn {#3} {#4}
+          }
+          {
+            \int_zero:N \l__figmint_legend_candidate_clearance_int
+            \int_zero:N \l__figmint_legend_candidate_margin_int
+          }
+        \int_set:Nn \l__figmint_legend_candidate_complexity_int {#5}
+        \int_set:Nn \l__figmint_legend_candidate_rank_int {#1}
+        \bool_set_false:N \l__figmint_legend_better_bool
+        \bool_if:NTF \g__figmint_legend_found_bool
+          { \tl_map_inline:Nn \c__figmint_legend_scores_tl { \__figmint_legend_compare_score:nn ##1 } }
+          { \bool_set_true:N \l__figmint_legend_better_bool }
+        \bool_if:NT \l__figmint_legend_better_bool
+          {
+            \bool_gset_true:N \g__figmint_legend_found_bool
+            \tl_map_inline:Nn \c__figmint_legend_scores_tl
+              {
+                \int_gset_eq:cc
+                  { g__figmint_legend_best_ \use_i:nn ##1 _int }
+                  { l__figmint_legend_candidate_ \use_i:nn ##1 _int }
+              }
+            \tl_gset:Nn \g__figmint_legend_best_anchor_tl {#2}
+            \int_gset:Nn \g__figmint_legend_best_x_int {#3}
+            \int_gset:Nn \g__figmint_legend_best_y_int {#4}
+          }
+      }
+  }
+\cs_new_protected:Npn \__figmint_legend_select_fixed:nnnnn #1#2#3#4#5
+  {
+    \str_if_eq:VnT \l__figmint_legend_location_tl {#2}
+      { \seq_put_right:Nn \l__figmint_legend_anchors_seq { {#1} {#2} {#3} {#4} {#5} } }
+  }
+\cs_new_protected:Npn \__figmint_legend_select_anchors:
+  {
+    \pgfkeysgetvalue { /pgfplots/figmint~legend~mode } \l__figmint_legend_mode_tl
+    \str_if_eq:VnTF \l__figmint_legend_mode_tl { fixed }
+      {
+        \pgfkeysgetvalue { /pgfplots/figmint~legend~fixed~location }
+          \l__figmint_legend_location_tl
+        \seq_clear:N \l__figmint_legend_anchors_seq
+        \seq_map_inline:Nn \c__figmint_legend_anchors_seq
+          { \__figmint_legend_select_fixed:nnnnn ##1 }
+        \seq_if_empty:NT \l__figmint_legend_anchors_seq
+          { \msg_error:nnV { figmint } { legend-location } \l__figmint_legend_location_tl }
+      }
+      { \seq_set_eq:NN \l__figmint_legend_anchors_seq \c__figmint_legend_anchors_seq }
+  }
+\cs_new_protected:Npn \__figmint_legend_search:
+  {
+    \bool_gset_false:N \g__figmint_legend_found_bool
+    \__figmint_legend_select_anchors:
+    \tl_gset_eq:NN \g__figmint_legend_saved_entries_tl \pgfplots@legend
+    \tl_gset_eq:NN \g__figmint_legend_saved_specs_tl \pgfplots@plotspeclist
+    \int_step_inline:nn { \g__figmint_legend_entries_int }
+      {
+        \__figmint_legend_measure:n {##1}
+        \int_set:Nn \l__figmint_legend_rows_int
+          { \__figmint_legend_ceil_div:nn { \g__figmint_legend_entries_int } {##1} }
+        \int_set:Nn \l__figmint_legend_candidate_columns_int {##1}
+        \int_set:Nn \l__figmint_legend_candidate_empty_int
+          { ##1 * \l__figmint_legend_rows_int - \g__figmint_legend_entries_int }
+        \int_set:Nn \l__figmint_legend_candidate_balance_int
+          { \int_abs:n { ##1 - \l__figmint_legend_rows_int } }
+        \int_set:Nn \l__figmint_legend_candidate_size_int
+          {
+            \l__figmint_legend_width_int * \c__figmint_legend_size_unit_int
+              / \g__figmint_legend_width_int
+            + \l__figmint_legend_height_int * \c__figmint_legend_size_unit_int
+              / \g__figmint_legend_height_int
+          }
+        \seq_map_inline:Nn \l__figmint_legend_anchors_seq
+          { \__figmint_legend_try:nnnnn ####1 }
+      }
+    \bool_if:NF \g__figmint_legend_found_bool
+      { \msg_error:nn { figmint } { legend-fit } }
+  }
+
+\cs_new_protected:Npn \__figmint_legend_apply:
+  {
+    \exp_args:Nx \pgfplotsset
+      {
+        legend~columns = \int_use:N \g__figmint_legend_best_columns_int ,
+        legend~cell~align = left ,
+        transpose~legend = false ,
+        legend~style =
+          {
+            at =
+              {
+                (
+                  \fp_eval:n { \g__figmint_legend_best_x_int / 2 } ,
+                  \fp_eval:n { \g__figmint_legend_best_y_int / 2 }
+                )
+              } ,
+            anchor = \g__figmint_legend_best_anchor_tl
+          } ,
+      }
+    \pgfkeysgetvalue { /pgfplots/figmint~legend~mode } \l__figmint_legend_mode_tl
+    \pgfkeysgetvalue { /pgfplots/figmint~legend~report } \l__figmint_legend_report_tl
+    \tl_if_empty:NF \l__figmint_legend_report_tl
+      {
+        \typeout
+          {
+            FIGMINT_LEGEND~
+            name=\l__figmint_legend_report_tl;
+            mode=\l__figmint_legend_mode_tl;
+            anchor=\g__figmint_legend_best_anchor_tl;
+            columns=\int_use:N \g__figmint_legend_best_columns_int;
+            x=\fp_eval:n { \g__figmint_legend_best_x_int / 2 };
+            y=\fp_eval:n { \g__figmint_legend_best_y_int / 2 };
+            badness=\int_use:N \g__figmint_legend_best_badness_int
+          }
+      }
+  }
+\cs_new_protected:Npn \__figmint_legend_place:
+  {
+    \bool_if:NT \g__figmint_legend_pending_bool
+      {
+        \bool_gset_false:N \g__figmint_legend_pending_bool
+        \bool_gset_false:N \g__figmint_legend_capture_bool
+        \group_begin:
+          \__figmint_legend_build_table:
+          \__figmint_legend_search:
+        \group_end:
+        \__figmint_legend_apply:
+      }
+  }
+
+\cs_new_eq:NN \figmint@legend@beginaxis \__figmint_legend_begin_axis:
+\cs_new_eq:NN \figmint@legend@pause \__figmint_legend_pause:
+\cs_new_eq:NN \figmint@legend@resume \__figmint_legend_resume:
+\cs_new_eq:NN \figmint@legend@place \__figmint_legend_place:
+\cs_new_protected:Npn \figmint@legend@surface
+  { \__figmint_legend_if_capturing:T { \__figmint_legend_capture_surface: } }
+
+\ExplSyntaxOff
+
+\apptocmd{\pgfplots@BEGIN@init@and@draw@axis}{\figmint@legend@beginaxis}{}{%
+    \figmint@patcherror\pgfplots@BEGIN@init@and@draw@axis
 }
-
-\pgfplotsset{execute at begin axis/.add={}{\figmintlegendbeginaxis}}
-
-\let\figmintoriginalpgfplotsaddlegendentryopts\pgfplots@addlegendentry@opts
-\long\def\pgfplots@addlegendentry@opts[#1]#2{%
-    \iffigmintlegendactive
-        \pgfplotslistpushbackglobal[#1]#2\to\figmintlegendstoredentries
-    \fi
-    \figmintoriginalpgfplotsaddlegendentryopts[#1]{#2}%
+\pretocmd{\pgfplots@END@init@and@draw@axis}{\figmint@legend@pause}{}{%
+    \figmint@patcherror\pgfplots@END@init@and@draw@axis
 }
-
-\newcommand*{\figmintlegendmeasureentries}{%
-    \figmintlegendhasentriesfalse
-    \figmintlegendentrycount=0
-    \setlength{\figmintlegendlabelwidthlength}{0pt}%
-    \setlength{\figmintlegendlabelheightlength}{0pt}%
-    \pgfplotslistcheckempty\figmintlegendstoredentries
-    \ifpgfplotslistempty
-        \pgfkeysgetvalue{/pgfplots/legend entries}\figmintlegendentries
-        \ifdefempty\figmintlegendentries{%
-            \pgfplotslistnewempty\figmintlegendentrylist
-        }{%
-            \pgfkeysgetvalue{/pgfplots/legend entries}\pgfplots@legend
-            \expandafter\pgfplots@assign@list\expandafter\pgfplots@legend\expandafter{\pgfplots@legend}%
-            \let\figmintlegendentrylist\pgfplots@legend
-        }%
-    \else
-        \let\figmintlegendentrylist\figmintlegendstoredentries
-    \fi
-    \pgfplotslistcheckempty\figmintlegendentrylist
-    \ifpgfplotslistempty
-    \else
-        \pgfplotslistforeachungrouped\figmintlegendentrylist\as\figmintlegendentry{%
-            \advance\figmintlegendentrycount by1
-            \expandafter\pgfplots@split@opts\figmintlegendentry\pgfplots@result@to{\figmintlegendentrytext}{\figmintlegendentryoptions}%
-            \begingroup
-                \figmintlegendselectfont
-                \setbox0=\hbox{\strut\figmintlegendentrytext}%
-                \xdef\figmintlegendmeasuredwidth{\the\wd0}%
-                \xdef\figmintlegendmeasuredheight{\the\dimexpr\ht0+\dp0\relax}%
-            \endgroup
-            \ifdim\figmintlegendmeasuredwidth>\figmintlegendlabelwidthlength
-                \setlength{\figmintlegendlabelwidthlength}{\figmintlegendmeasuredwidth}%
-            \fi
-            \ifdim\figmintlegendmeasuredheight>\figmintlegendlabelheightlength
-                \setlength{\figmintlegendlabelheightlength}{\figmintlegendmeasuredheight}%
-            \fi
-        }%
-        \ifnum\figmintlegendentrycount>0
-            \figmintlegendhasentriestrue
-        \fi
-    \fi
+\pretocmd{\pgfplots@markers@visphase@after@axis}{\figmint@legend@resume}{}{%
+    \figmint@patcherror\pgfplots@markers@visphase@after@axis
 }
-
-\newcommand*{\figmintlegendapplydatascale}[3]{%
-    \pgfplots@if{pgfplots@apply@datatrafo@#2}{%
-        \pgfplotscoordmath{#2}{datascaletrafo}{#1}%
-        \edef#3{\pgfmathresult}%
-    }{%
-        \edef#3{#1}%
-    }%
+\apptocmd{\pgfplots@markers@visphase@after@axis}{\figmint@legend@pause}{}{%
+    \figmint@patcherror\pgfplots@markers@visphase@after@axis
 }
-
-\newcommand*{\figmintlegendnormalizewithmath}[4]{%
-    \pgfplotscoordmath{#1}{op}{subtract}{{#2}{\csname pgfplots@#3min\endcsname}}%
-    \edef\figmintlegendaxisnumerator{\pgfmathresult}%
-    \pgfplotscoordmath{#1}{op}{subtract}{{\csname pgfplots@#3max\endcsname}{\csname pgfplots@#3min\endcsname}}%
-    \edef\figmintlegendaxisdenominator{\pgfmathresult}%
-    \pgfplotscoordmath{#1}{op}{divide}{{\figmintlegendaxisnumerator}{\figmintlegendaxisdenominator}}%
-    \pgfplotscoordmath{#1}{tofixed}{\pgfmathresult}%
-    \edef#4{\pgfmathresult}%
+\pretocmd{\pgfplotslibrarysurfdrawinpicture}{\figmint@legend@surface}{}{%
+    \figmint@patcherror\pgfplotslibrarysurfdrawinpicture
 }
-
-\newcommand*{\figmintlegendnormalizeaxiscoordinate}[3]{%
-    \pgfplots@if{pgfplots@apply@datatrafo@#2}{%
-        \figmintlegendnormalizewithmath{pgfbasic}{#1}{#2}{#3}%
-    }{%
-        \figmintlegendnormalizewithmath{#2}{#1}{#2}{#3}%
-    }%
-}
-
-\newcommand*{\figmintlegendnormalizedtick}[3]{%
-    \figmintlegendnormalizeaxiscoordinate{#1}{#2}{#3}%
-}
-
-\newcommand*{\figmintlegendcollectgrid}[2]{%
-    \def#2{0,1}%
-    \figmintlegendgridhasvaluetrue
-    \ifcsdef{pgfplots@prepared@tick@positions@major@#1}{%
-        \expandafter\let\expandafter\figmintlegendticklist\csname pgfplots@prepared@tick@positions@major@#1\endcsname
-        \pgfplotslistcheckempty\figmintlegendticklist
-        \ifpgfplotslistempty
-            \PackageError{figmint}{Legend optimizer requires major #1 ticks}{Add major #1 ticks or place the legend manually.}%
-        \fi
-        \pgfplotslistforeachungrouped\figmintlegendticklist\as\figmintlegendtickentry{%
-            \expandafter\pgfplots@prepared@tick@pos@unpack\figmintlegendtickentry
-            \figmintlegendnormalizedtick{\pgfplots@tick}{#1}{\figmintlegendticknormalized}%
-            \iffigmintlegendgridhasvalue
-                \edef#2{#2,\figmintlegendticknormalized}%
-            \else
-                \edef#2{\figmintlegendticknormalized}%
-                \figmintlegendgridhasvaluetrue
-            \fi
-        }%
-        \iffigmintlegendgridhasvalue
-        \else
-            \PackageError{figmint}{Legend optimizer requires major #1 ticks}{Add major #1 ticks or place the legend manually.}%
-        \fi
-    }{%
-        \PackageError{figmint}{Legend optimizer requires prepared major #1 ticks}{PGFPlots did not expose prepared major #1 ticks at legend placement time.}%
-    }%
-}
-
-\newcommand*{\figmintlegenddimensions}[1]{%
-    \figmintlegendcolumncount=#1\relax
-    \figmintlegendrowcount=0
-    \figmintlegendremainingentrycount=\figmintlegendentrycount
-    \@whilenum\figmintlegendremainingentrycount>0\do{%
-        \advance\figmintlegendrowcount by1
-        \advance\figmintlegendremainingentrycount by-\figmintlegendcolumncount
-    }%
-    \setlength{\figmintlegendentrywidthlength}{\dimexpr0.6cm+3pt+\figmintlegendlabelwidthlength\relax}%
-    \setlength{\figmintlegendentryheightlength}{\dimexpr\figmintlegendlabelheightlength+1pt\relax}%
-    \figmintlegendseparationcount=\numexpr\figmintlegendcolumncount-1\relax
-    \setlength{\figmintlegendseparationlength}{7pt}%
-    \multiply\figmintlegendseparationlength by \figmintlegendseparationcount
-    \setlength{\figmintlegendwidthlength}{%
-        \dimexpr\figmintlegendcolumncount\figmintlegendentrywidthlength+\figmintlegendseparationlength+6.4pt\relax}%
-    \setlength{\figmintlegendheightlength}{%
-        \dimexpr\figmintlegendrowcount\figmintlegendentryheightlength+6.4pt\relax}%
-    \pgfmathsetmacro{\figmintlegendcandidatewidth}{\strip@pt\figmintlegendwidthlength/\strip@pt\figmintaxiswidthlength}%
-    \pgfmathsetmacro{\figmintlegendcandidateheight}{\strip@pt\figmintlegendheightlength/\strip@pt\figmintaxisheightlength}%
-}
-
-\newcommand*{\figmintlegendresolvetarget}[5]{%
-    \iffigmintlegendcandidatefits
-        \gdef#5{}%
-        \gdef\figmintlegendbestdistance{1000}%
-        \edef\figmintlegendgridlist{#1}%
-        \foreach \figmintlegendgridvalue in \figmintlegendgridlist {%
-            \ifx\figmintlegendgridvalue\@empty
-            \else
-                \pgfmathparse{\figmintlegendgridvalue-#3*#4}%
-                \let\figmintlegendcandidatezero\pgfmathresult
-                \pgfmathparse{\figmintlegendcandidatezero+#4}%
-                \let\figmintlegendcandidateone\pgfmathresult
-                \ifdim\figmintlegendcandidatezero pt<-0.000001pt\relax
-                \else
-                    \ifdim\figmintlegendcandidateone pt>1.000001pt\relax
-                    \else
-                        \pgfmathparse{(\figmintlegendgridvalue-#2)^2}%
-                        \ifdim\pgfmathresult pt<\figmintlegendbestdistance pt\relax
-                            \xdef\figmintlegendbestdistance{\pgfmathresult}%
-                            \xdef#5{\figmintlegendgridvalue}%
-                        \fi
-                    \fi
-                \fi
-            \fi
-        }%
-        \ifx#5\@empty
-            \global\figmintlegendcandidatefitsfalse
-        \fi
-    \fi
-}
-
-\newcommand*{\figmintlegendpointclearance}{%
-    \pgfmathsetmacro{\figmintlegenddx}{max(\figmintlegendxzero-\figmintlegendcurrentx,0,\figmintlegendcurrentx-\figmintlegendxone)}%
-    \pgfmathsetmacro{\figmintlegenddy}{max(\figmintlegendyzero-\figmintlegendcurrenty,0,\figmintlegendcurrenty-\figmintlegendyone)}%
-    \pgfmathsetmacro{\figmintlegenddistance}{\figmintlegenddx*\figmintlegenddx+(\figmintlegenddy*\strip@pt\figmintaxisheightlength/\strip@pt\figmintaxiswidthlength)^2}%
-    \ifdim\figmintlegenddistance pt<\figmintlegendcandidateclearance pt\relax
-        \edef\figmintlegendcandidateclearance{\figmintlegenddistance}%
-    \fi
-}
-
-\newcommand*{\figmintlegendpointmargin}{%
-    \figmintlegendpointgrowthpossibletrue
-    \def\figmintlegendgrowthx{0}%
-    \def\figmintlegendgrowthy{0}%
-    \ifdim\figmintlegendcurrentx pt<\figmintlegendtargetx pt\relax
-        \pgfmathsetmacro{\figmintlegendgrowthdenominator}{\figmintlegendcandidatewidth*\figmintlegendfractionx}%
-        \ifdim\figmintlegendgrowthdenominator pt>0.000001pt\relax
-            \pgfmathsetmacro{\figmintlegendgrowthx}{(\figmintlegendtargetx-\figmintlegendcurrentx)/\figmintlegendgrowthdenominator}%
-        \else
-            \figmintlegendpointgrowthpossiblefalse
-        \fi
-    \else
-        \ifdim\figmintlegendcurrentx pt>\figmintlegendtargetx pt\relax
-            \pgfmathsetmacro{\figmintlegendgrowthdenominator}{\figmintlegendcandidatewidth*(1-\figmintlegendfractionx)}%
-            \ifdim\figmintlegendgrowthdenominator pt>0.000001pt\relax
-                \pgfmathsetmacro{\figmintlegendgrowthx}{(\figmintlegendcurrentx-\figmintlegendtargetx)/\figmintlegendgrowthdenominator}%
-            \else
-                \figmintlegendpointgrowthpossiblefalse
-            \fi
-        \fi
-    \fi
-    \ifdim\figmintlegendcurrenty pt<\figmintlegendtargety pt\relax
-        \pgfmathsetmacro{\figmintlegendgrowthdenominator}{\figmintlegendcandidateheight*\figmintlegendfractiony}%
-        \ifdim\figmintlegendgrowthdenominator pt>0.000001pt\relax
-            \pgfmathsetmacro{\figmintlegendgrowthy}{(\figmintlegendtargety-\figmintlegendcurrenty)/\figmintlegendgrowthdenominator}%
-        \else
-            \figmintlegendpointgrowthpossiblefalse
-        \fi
-    \else
-        \ifdim\figmintlegendcurrenty pt>\figmintlegendtargety pt\relax
-            \pgfmathsetmacro{\figmintlegendgrowthdenominator}{\figmintlegendcandidateheight*(1-\figmintlegendfractiony)}%
-            \ifdim\figmintlegendgrowthdenominator pt>0.000001pt\relax
-                \pgfmathsetmacro{\figmintlegendgrowthy}{(\figmintlegendcurrenty-\figmintlegendtargety)/\figmintlegendgrowthdenominator}%
-            \else
-                \figmintlegendpointgrowthpossiblefalse
-            \fi
-        \fi
-    \fi
-    \iffigmintlegendpointgrowthpossible
-        \pgfmathsetmacro{\figmintlegendpointgrowth}{max(1,\figmintlegendgrowthx,\figmintlegendgrowthy)}%
-        \ifdim\figmintlegendpointgrowth pt>1.000001pt\relax
-            \iffigmintlegendcandidatemargininfinite
-                \edef\figmintlegendcandidatemargin{\figmintlegendpointgrowth}%
-                \figmintlegendcandidatemargininfinitefalse
-            \else
-                \ifdim\figmintlegendpointgrowth pt<\figmintlegendcandidatemargin pt\relax
-                    \edef\figmintlegendcandidatemargin{\figmintlegendpointgrowth}%
-                \fi
-            \fi
-        \fi
-    \fi
-}
-
-\newcommand*{\figmintlegendcountpoint}{%
-    \ifdim\figmintlegendcurrentx pt<\figmintlegendxzero pt\relax
-    \else
-        \ifdim\figmintlegendcurrentx pt>\figmintlegendxone pt\relax
-        \else
-            \ifdim\figmintlegendcurrenty pt<\figmintlegendyzero pt\relax
-            \else
-                \ifdim\figmintlegendcurrenty pt>\figmintlegendyone pt\relax
-                \else
-                    \advance\figmintlegendcandidatebadness by1
-                \fi
-            \fi
-        \fi
-    \fi
-}
-
-\newcommand*{\figmintlegendcountsegment}[1]{%
-    \ifnum#1=\figmintlegendpreviousplot\relax
-        \pgfmathsetmacro{\figmintlegendsegmentxmin}{min(\figmintlegendpreviousx,\figmintlegendcurrentx)}%
-        \pgfmathsetmacro{\figmintlegendsegmentxmax}{max(\figmintlegendpreviousx,\figmintlegendcurrentx)}%
-        \pgfmathsetmacro{\figmintlegendsegmentymin}{min(\figmintlegendpreviousy,\figmintlegendcurrenty)}%
-        \pgfmathsetmacro{\figmintlegendsegmentymax}{max(\figmintlegendpreviousy,\figmintlegendcurrenty)}%
-        \ifdim\figmintlegendsegmentxmax pt<\figmintlegendxzero pt\relax
-        \else
-            \ifdim\figmintlegendsegmentxmin pt>\figmintlegendxone pt\relax
-            \else
-                \ifdim\figmintlegendsegmentymax pt<\figmintlegendyzero pt\relax
-                \else
-                    \ifdim\figmintlegendsegmentymin pt>\figmintlegendyone pt\relax
-                    \else
-                        \advance\figmintlegendcandidatebadness by1
-                    \fi
-                \fi
-            \fi
-        \fi
-    \fi
-}
-
-\newcommand*{\figmintlegendcountcandidatebox}{%
-    \def\figmintlegendpreviousplot{-1}%
-    \def\figmintlegendpoint##1##2##3{%
-        \figmintlegendapplydatascale{##2}{x}{\figmintlegendcurrentaxisx}%
-        \figmintlegendapplydatascale{##3}{y}{\figmintlegendcurrentaxisy}%
-        \figmintlegendnormalizeaxiscoordinate{\figmintlegendcurrentaxisx}{x}{\figmintlegendcurrentx}%
-        \figmintlegendnormalizeaxiscoordinate{\figmintlegendcurrentaxisy}{y}{\figmintlegendcurrenty}%
-        \ifdim\figmintlegendcurrentx pt<-0.000001pt\relax
-        \else
-            \ifdim\figmintlegendcurrentx pt>1.000001pt\relax
-            \else
-                \ifdim\figmintlegendcurrenty pt<-0.000001pt\relax
-                \else
-                    \ifdim\figmintlegendcurrenty pt>1.000001pt\relax
-                    \else
-                        \figmintlegendcountpoint
-                        \figmintlegendcountsegment{##1}%
-                        \figmintlegendpointclearance
-                        \figmintlegendpointmargin
-                    \fi
-                \fi
-            \fi
-        \fi
-        \edef\figmintlegendpreviousplot{##1}%
-        \edef\figmintlegendpreviousx{\figmintlegendcurrentx}%
-        \edef\figmintlegendpreviousy{\figmintlegendcurrenty}%
-    }%
-    \figmintlegendpoints
-}
-
-\newcommand*{\figmintlegendupdatemarginhigh}{%
-    \ifdim\figmintlegendcoverdimension pt>0.000001pt\relax
-        \pgfmathsetmacro{\figmintlegendcoverscale}{\figmintlegendcoverdistance/\figmintlegendcoverdimension}%
-        \ifdim\figmintlegendcoverscale pt>\figmintlegendmarginhigh pt\relax
-            \edef\figmintlegendmarginhigh{\figmintlegendcoverscale}%
-        \fi
-    \fi
-}
-
-\newcommand*{\figmintlegendaxiscovermargin}{%
-    \def\figmintlegendmarginhigh{1}%
-    \pgfmathsetmacro{\figmintlegendcoverdistance}{\figmintlegendtargetx}%
-    \pgfmathsetmacro{\figmintlegendcoverdimension}{\figmintlegendcandidatewidth*\figmintlegendfractionx}%
-    \figmintlegendupdatemarginhigh
-    \pgfmathsetmacro{\figmintlegendcoverdistance}{1-\figmintlegendtargetx}%
-    \pgfmathsetmacro{\figmintlegendcoverdimension}{\figmintlegendcandidatewidth*(1-\figmintlegendfractionx)}%
-    \figmintlegendupdatemarginhigh
-    \pgfmathsetmacro{\figmintlegendcoverdistance}{\figmintlegendtargety}%
-    \pgfmathsetmacro{\figmintlegendcoverdimension}{\figmintlegendcandidateheight*\figmintlegendfractiony}%
-    \figmintlegendupdatemarginhigh
-    \pgfmathsetmacro{\figmintlegendcoverdistance}{1-\figmintlegendtargety}%
-    \pgfmathsetmacro{\figmintlegendcoverdimension}{\figmintlegendcandidateheight*(1-\figmintlegendfractiony)}%
-    \figmintlegendupdatemarginhigh
-    \iffigmintlegendcandidatemargininfinite
-    \else
-        \ifdim\figmintlegendcandidatemargin pt>\figmintlegendmarginhigh pt\relax
-            \figmintlegendcandidatemargininfinitetrue
-        \fi
-    \fi
-}
-
-\newcommand*{\figmintlegendscorecandidate}[4]{%
-    \figmintlegendcandidatebadness=0
-    \def\figmintlegendcandidateclearance{1000}%
-    \def\figmintlegendcandidatemargin{0}%
-    \figmintlegendcandidatemargininfinitetrue
-    \figmintlegendcountcandidatebox
-    \ifnum\figmintlegendcandidatebadness>0
-        \def\figmintlegendcandidatemargin{1}%
-        \figmintlegendcandidatemargininfinitefalse
-    \else
-        \figmintlegendaxiscovermargin
-    \fi
-    \pgfmathsetmacro{\figmintlegendbalance}{abs(#4-\figmintlegendrowcount)}%
-    \pgfmathsetmacro{\figmintlegendsize}{\figmintlegendcandidatewidth+\figmintlegendcandidateheight}%
-    \edef\figmintlegendcandidateemptycells{\the\numexpr#4*\figmintlegendrowcount-\figmintlegendentrycount\relax}%
-    \edef\figmintlegendcandidaterows{\the\figmintlegendrowcount}%
-    \edef\figmintlegendcandidatebalance{\figmintlegendbalance}%
-    \edef\figmintlegendcandidatecomplexity{#3}%
-    \edef\figmintlegendcandidatesize{\figmintlegendsize}%
-}
-
-\newcommand*{\figmintlegendcomparetail}[1]{%
-    \ifdim\figmintlegendcandidatecomplexity pt<\figmintlegendbestcomplexity pt\relax
-        \figmintlegendcandidatebettertrue
-    \else
-        \ifdim\figmintlegendcandidatecomplexity pt=\figmintlegendbestcomplexity pt\relax
-            \ifdim\figmintlegendcandidatesize pt<\figmintlegendbestsize pt\relax
-                \figmintlegendcandidatebettertrue
-            \else
-                \ifdim\figmintlegendcandidatesize pt=\figmintlegendbestsize pt\relax
-                    \ifnum#1<\figmintlegendbestcolumns\relax
-                        \figmintlegendcandidatebettertrue
-                    \fi
-                \fi
-            \fi
-        \fi
-    \fi
-}
-
-\newcommand*{\figmintlegendcomparemargins}[1]{%
-    \figmintlegendcomparemargintiefalse
-    \iffigmintlegendcandidatemargininfinite
-        \iffigmintlegendbestmargininfinite
-            \figmintlegendcomparemargintietrue
-        \else
-            \figmintlegendcandidatebettertrue
-        \fi
-    \else
-        \iffigmintlegendbestmargininfinite
-        \else
-            \ifdim\figmintlegendcandidatemargin pt>\figmintlegendbestmargin pt\relax
-                \figmintlegendcandidatebettertrue
-            \else
-                \ifdim\figmintlegendcandidatemargin pt=\figmintlegendbestmargin pt\relax
-                    \figmintlegendcomparemargintietrue
-                \fi
-            \fi
-        \fi
-    \fi
-    \iffigmintlegendcomparemargintie
-        \figmintlegendcomparetail{#1}%
-    \fi
-}
-
-\newcommand*{\figmintlegendcomparecandidate}[1]{%
-    \figmintlegendcandidatebetterfalse
-    \iffigmintlegendhascandidate
-        \ifnum\figmintlegendcandidatebadness<\figmintlegendbestbadness
-            \figmintlegendcandidatebettertrue
-        \else
-            \ifnum\figmintlegendcandidatebadness=\figmintlegendbestbadness
-                \ifnum\figmintlegendcandidateemptycells<\figmintlegendbestemptycells\relax
-                    \figmintlegendcandidatebettertrue
-                \else
-                    \ifnum\figmintlegendcandidateemptycells=\figmintlegendbestemptycells\relax
-                        \ifdim\figmintlegendcandidatebalance pt<\figmintlegendbestbalance pt\relax
-                            \figmintlegendcandidatebettertrue
-                        \else
-                            \ifdim\figmintlegendcandidatebalance pt=\figmintlegendbestbalance pt\relax
-                                \ifdim\figmintlegendcandidateclearance pt>\figmintlegendbestclearance pt\relax
-                                    \figmintlegendcandidatebettertrue
-                                \else
-                                    \ifdim\figmintlegendcandidateclearance pt=\figmintlegendbestclearance pt\relax
-                                        \figmintlegendcomparemargins{#1}%
-                                    \fi
-                                \fi
-                            \fi
-                        \fi
-                    \fi
-                \fi
-            \fi
-        \fi
-    \else
-        \figmintlegendcandidatebettertrue
-    \fi
-}
-
-\newcommand*{\figmintlegendtrycandidate}[7]{%
-    \figmintlegendcandidatefitstrue
-    \def\figmintlegendfractionx{#2}%
-    \def\figmintlegendfractiony{#3}%
-    \def\figmintlegendanchor{#4}%
-    \figmintlegendresolvetarget{\figmintlegendxgrid}{#2}{#2}{\figmintlegendcandidatewidth}{\figmintlegendtargetx}%
-    \figmintlegendresolvetarget{\figmintlegendygrid}{#3}{#3}{\figmintlegendcandidateheight}{\figmintlegendtargety}%
-    \iffigmintlegendcandidatefits
-        \pgfmathsetmacro{\figmintlegendxzero}{\figmintlegendtargetx-\figmintlegendcandidatewidth*#2}%
-        \pgfmathsetmacro{\figmintlegendxone}{\figmintlegendxzero+\figmintlegendcandidatewidth}%
-        \pgfmathsetmacro{\figmintlegendyzero}{\figmintlegendtargety-\figmintlegendcandidateheight*#3}%
-        \pgfmathsetmacro{\figmintlegendyone}{\figmintlegendyzero+\figmintlegendcandidateheight}%
-        \figmintlegendscorecandidate{#1}{#2}{#5}{#6}%
-        \figmintlegendcomparecandidate{#6}%
-        \iffigmintlegendcandidatebetter
-            \figmintlegendhascandidatetrue
-            \figmintlegendbestbadness=\figmintlegendcandidatebadness
-            \edef\figmintlegendbestemptycells{\figmintlegendcandidateemptycells}%
-            \edef\figmintlegendbestrows{\figmintlegendcandidaterows}%
-            \edef\figmintlegendbestbalance{\figmintlegendcandidatebalance}%
-            \edef\figmintlegendbestclearance{\figmintlegendcandidateclearance}%
-            \edef\figmintlegendbestmargin{\figmintlegendcandidatemargin}%
-            \iffigmintlegendcandidatemargininfinite
-                \figmintlegendbestmargininfinitetrue
-            \else
-                \figmintlegendbestmargininfinitefalse
-            \fi
-            \edef\figmintlegendbestcomplexity{\figmintlegendcandidatecomplexity}%
-            \edef\figmintlegendbestsize{\figmintlegendcandidatesize}%
-            \edef\figmintlegendbestx{\figmintlegendtargetx}%
-            \edef\figmintlegendbesty{\figmintlegendtargety}%
-            \edef\figmintlegendbestanchor{#4}%
-            \edef\figmintlegendbestcolumns{#6}%
-        \fi
-    \fi
-}
-
-\newcommand*{\figmintlegendtrycolumns}[1]{%
-    \figmintlegenddimensions{#1}%
-    \figmintlegendtrycandidate{1}{1}{1}{north east}{0}{#1}{upper right}%
-    \figmintlegendtrycandidate{2}{0}{1}{north west}{0}{#1}{upper left}%
-    \figmintlegendtrycandidate{3}{0}{0}{south west}{0}{#1}{lower left}%
-    \figmintlegendtrycandidate{4}{1}{0}{south east}{0}{#1}{lower right}%
-    \figmintlegendtrycandidate{5}{1}{0.5}{east}{1}{#1}{right}%
-    \figmintlegendtrycandidate{6}{0}{0.5}{west}{1}{#1}{left}%
-    \figmintlegendtrycandidate{7}{1}{0.5}{east}{1}{#1}{center right}%
-    \figmintlegendtrycandidate{8}{0.5}{0}{south}{0}{#1}{lower center}%
-    \figmintlegendtrycandidate{9}{0.5}{1}{north}{0}{#1}{upper center}%
-    \figmintlegendtrycandidate{10}{0.5}{0.5}{center}{2}{#1}{center}%
-}
-
-\newcommand*{\figmintlegendtryfixedcolumns}[1]{%
-    \figmintlegenddimensions{#1}%
-    \ifdefstring\figmintlegendfixedlocation{north east}{%
-        \figmintlegendtrycandidate{1}{1}{1}{north east}{0}{#1}{upper right}%
-    }{}%
-    \ifdefstring\figmintlegendfixedlocation{north west}{%
-        \figmintlegendtrycandidate{2}{0}{1}{north west}{0}{#1}{upper left}%
-    }{}%
-    \ifdefstring\figmintlegendfixedlocation{south west}{%
-        \figmintlegendtrycandidate{3}{0}{0}{south west}{0}{#1}{lower left}%
-    }{}%
-    \ifdefstring\figmintlegendfixedlocation{south east}{%
-        \figmintlegendtrycandidate{4}{1}{0}{south east}{0}{#1}{lower right}%
-    }{}%
-    \ifdefstring\figmintlegendfixedlocation{east}{%
-        \figmintlegendtrycandidate{5}{1}{0.5}{east}{1}{#1}{right}%
-    }{}%
-    \ifdefstring\figmintlegendfixedlocation{west}{%
-        \figmintlegendtrycandidate{6}{0}{0.5}{west}{1}{#1}{left}%
-    }{}%
-    \ifdefstring\figmintlegendfixedlocation{center east}{%
-        \figmintlegendtrycandidate{7}{1}{0.5}{east}{1}{#1}{center right}%
-    }{}%
-    \ifdefstring\figmintlegendfixedlocation{south}{%
-        \figmintlegendtrycandidate{8}{0.5}{0}{south}{0}{#1}{lower center}%
-    }{}%
-    \ifdefstring\figmintlegendfixedlocation{north}{%
-        \figmintlegendtrycandidate{9}{0.5}{1}{north}{0}{#1}{upper center}%
-    }{}%
-    \ifdefstring\figmintlegendfixedlocation{center}{%
-        \figmintlegendtrycandidate{10}{0.5}{0.5}{center}{2}{#1}{center}%
-    }{}%
-}
-
-\newcommand*{\figmintlegendoptimize}{%
-    \iffigmintlegendaxisenabled
-        \pgfkeysgetvalue{/pgfplots/figmint legend mode}\figmintlegendmode
-        \pgfkeysgetvalue{/pgfplots/figmint legend fixed location}\figmintlegendfixedlocation
-        \pgfkeysgetvalue{/pgfplots/figmint legend report}\figmintlegendreportname
-        \ifboolexpr{test {\ifdefstring\figmintlegendmode{best}} or test {\ifdefstring\figmintlegendmode{fixed}}}{%
-            \figmintlegendmeasureentries
-            \iffigmintlegendhasentries
-                \figmintlegendcollectgrid{x}{\figmintlegendxgrid}%
-                \figmintlegendcollectgrid{y}{\figmintlegendygrid}%
-                \figmintlegendbestbadness=0
-                \def\figmintlegendbestemptycells{0}%
-                \def\figmintlegendbestrows{0}%
-                \def\figmintlegendbestbalance{0}%
-                \def\figmintlegendbestclearance{0}%
-                \def\figmintlegendbestmargin{0}%
-                \figmintlegendbestmargininfinitefalse
-                \def\figmintlegendbestcomplexity{0}%
-                \def\figmintlegendbestsize{0}%
-                \figmintlegendhascandidatefalse
-                \figmintlegendcolumncount=1
-                \loop
-                    \ifdefstring\figmintlegendmode{fixed}{%
-                        \figmintlegendtryfixedcolumns{\the\figmintlegendcolumncount}%
-                    }{%
-                        \figmintlegendtrycolumns{\the\figmintlegendcolumncount}%
-                    }%
-                    \advance\figmintlegendcolumncount by1
-                    \ifnum\figmintlegendcolumncount<\numexpr\figmintlegendentrycount+1\relax
-                \repeat
-                \iffigmintlegendhascandidate
-                    \pgfplotsset{
-                        legend columns=\figmintlegendbestcolumns,
-                        legend cell align=left,
-                        transpose legend=false,
-                        legend style={at={(\figmintlegendbestx,\figmintlegendbesty)},anchor=\figmintlegendbestanchor},
-                    }%
-                    \ifdefempty\figmintlegendreportname{}{%
-                        \typeout{FIGMINT_LEGEND name=\figmintlegendreportname;mode=\figmintlegendmode;anchor=\figmintlegendbestanchor;columns=\figmintlegendbestcolumns;x=\figmintlegendbestx;y=\figmintlegendbesty}%
-                    }%
-                \else
-                    \PackageError{figmint}{No grid-snapped legend placement fits inside the axes}{Reduce the legend size or place the legend explicitly.}%
-                \fi
-            \fi
-        }{}%
-        \figmintlegendendaxis
-    \fi
-}
-
-\pretocmd{\pgfplots@create@axis@descriptions}{\figmintlegendoptimize}{}{%
-    \PackageError{figmint}{Could not install legend optimizer}{PGFPlots changed its axis description hook.}%
+\pretocmd{\pgfplots@create@axis@descriptions}{\figmint@legend@place}{}{%
+    \figmint@patcherror\pgfplots@create@axis@descriptions
 }
 
 \pgfkeys{
@@ -1016,39 +1567,24 @@
     theme/.store in=\figminttheme,
     column/.store in=\figmintcolumn,
     width fraction/.store in=\figmintwidthfraction,
-    width_fraction/.store in=\figmintwidthfraction,
     rows/.store in=\figmintrows,
     cols/.store in=\figmintcols,
     height to width ratio/.store in=\figmintheighttowidthratio,
-    height_to_width_ratio/.store in=\figmintheighttowidthratio,
     figure width/.store in=\figmintfigurewidth,
     figure height/.store in=\figmintfigureheight,
     figure size/.style 2 args={figure width=#1,figure height=#2},
-    figure_size/.style 2 args={figure width=#1,figure height=#2},
     primary font/.store in=\figmintprimaryfont,
-    primary_font/.store in=\figmintprimaryfont,
     secondary font/.store in=\figmintsecondaryfont,
-    secondary_font/.store in=\figmintsecondaryfont,
     line width/.store in=\figmintlinewidth,
-    line_width/.store in=\figmintlinewidth,
     grid alpha/.store in=\figmintgridalpha,
-    grid_alpha/.store in=\figmintgridalpha,
     group horizontal sep/.store in=\figmintgrouphorizontalsep,
-    group_horizontal_sep/.store in=\figmintgrouphorizontalsep,
     group vertical sep/.store in=\figmintgroupverticalsep,
-    group_vertical_sep/.store in=\figmintgroupverticalsep,
     colorbar width/.store in=\figmintcolorbarwidth,
-    colorbar_width/.store in=\figmintcolorbarwidth,
     colorbar sep/.store in=\figmintcolorbarsep,
-    colorbar_sep/.store in=\figmintcolorbarsep,
     colorbar tick label width/.store in=\figmintcolorbarticklabelwidth,
-    colorbar_tick_label_width/.store in=\figmintcolorbarticklabelwidth,
     tick label shift/.store in=\figmintticklabelshift,
-    tick_label_shift/.store in=\figmintticklabelshift,
     grouped bar width/.store in=\figmintgroupedbarwidth,
-    grouped_bar_width/.store in=\figmintgroupedbarwidth,
     bar group width/.store in=\figmintbargroupwidth,
-    bar_group_width/.store in=\figmintbargroupwidth,
 }
 
 \newcommand*{\figmintrequirepositive}[2]{%
@@ -1083,16 +1619,8 @@
 }
 
 \newcommand*{\figmintrequiretheme}{%
-    \ifdefstring\figminttheme{normal}{}{%
-        \ifdefstring\figminttheme{latte}{}{%
-            \ifdefstring\figminttheme{frappe}{}{%
-                \ifdefstring\figminttheme{macchiato}{}{%
-                    \ifdefstring\figminttheme{mocha}{}{%
-                        \PackageError{figmint}{Unknown theme \figminttheme}{Use normal, latte, frappe, macchiato, or mocha.}%
-                    }%
-                }%
-            }%
-        }%
+    \ifcsdef{figmint@theme@\figminttheme}{}{%
+        \PackageError{figmint}{Unknown theme \figminttheme}{Use normal, latte, frappe, macchiato, or mocha.}%
     }%
 }
 
@@ -1188,28 +1716,8 @@
 }
 
 \newcommand*{\figmintselectbackgroundcolor}{%
-    \ifdefstring\figminttheme{normal}{%
-        \renewcommand*{\figmintbackgroundcolor}{FigmintNormalBackground}%
-        \renewcommand*{\figmintcycleonecolor}{FigmintNormalCycleOne}%
-    }{%
-        \ifdefstring\figminttheme{latte}{%
-            \renewcommand*{\figmintbackgroundcolor}{FigmintLatteBackground}%
-            \renewcommand*{\figmintcycleonecolor}{FigmintLatteCycleOne}%
-        }{%
-            \ifdefstring\figminttheme{frappe}{%
-                \renewcommand*{\figmintbackgroundcolor}{FigmintFrappeBackground}%
-                \renewcommand*{\figmintcycleonecolor}{FigmintFrappeCycleOne}%
-            }{%
-                \ifdefstring\figminttheme{macchiato}{%
-                    \renewcommand*{\figmintbackgroundcolor}{FigmintMacchiatoBackground}%
-                    \renewcommand*{\figmintcycleonecolor}{FigmintMacchiatoCycleOne}%
-                }{%
-                    \renewcommand*{\figmintbackgroundcolor}{FigmintMochaBackground}%
-                    \renewcommand*{\figmintcycleonecolor}{FigmintMochaCycleOne}%
-                }%
-            }%
-        }%
-    }%
+    \edef\figmintbackgroundcolor{\csuse{figmint@theme@\figminttheme}Background}%
+    \edef\figmintcycleonecolor{\csuse{figmint@theme@\figminttheme}CycleOne}%
 }
 
 \newcommand*{\figmintrefresh}{%
@@ -1526,10 +2034,6 @@
         rgb=(0.941896,0.968590,0.140956)
         rgb=(0.940015,0.975158,0.131326)
     },
-    colormap={figmint latte}{color(0cm)=(FigmintLatteBackground); color(1cm)=(FigmintLatteCycleOne); color(2cm)=(FigmintLatteText)},
-    colormap={figmint frappe}{color(0cm)=(FigmintFrappeBackground); color(1cm)=(FigmintFrappeCycleOne); color(2cm)=(FigmintFrappeText)},
-    colormap={figmint macchiato}{color(0cm)=(FigmintMacchiatoBackground); color(1cm)=(FigmintMacchiatoCycleOne); color(2cm)=(FigmintMacchiatoText)},
-    colormap={figmint mocha}{color(0cm)=(FigmintMochaBackground); color(1cm)=(FigmintMochaCycleOne); color(2cm)=(FigmintMochaText)},
     figmint/font/.style={
         font=\figmintprimaryfont,
         label style={font=\figmintprimaryfont},
@@ -1573,7 +2077,6 @@
     figmint/base axes/.style={
         figmint legend best,
         legend entries=,
-        execute for finished point/.add={}{\figmintlegendrecordpoint},
         axis x line*=bottom,
         axis y line*=left,
         tick align=outside,
@@ -1597,6 +2100,7 @@
     legend pos/south east/.append style={figmint legend fixed=south east},
     legend pos/north west/.append style={figmint legend fixed=north west},
     legend pos/north east/.append style={figmint legend fixed=north east},
+    legend pos/outer north east/.append style={figmint legend manual},
     figmint line/.style={figmint/value y grid,no markers},
     figmint line marks/.style={figmint/value y grid,mark=*},
     figmint scatter/.style={only marks,mark=figmintdisc,mark options={solid,draw=none,fill=.}},
@@ -1604,17 +2108,14 @@
     figmint bar legend/.style={
         legend image code/.code={\draw[##1,solid,mark=none,fill=.!30!\figmintbackgroundcolor,fill opacity=1] (0cm,-0.08cm) rectangle (0.35cm,0.08cm);},
     },
-    figmint bar/.style={figmint/value y grid,/tikz/ybar,bar direction=y,bar width=\figmintbarwidth,enlarge x limits=0.12,fill=.!30!\figmintbackgroundcolor,fill opacity=1,solid,mark=none,figmint bar legend,execute at begin plot/.add={}{\global\figmintlegendybartrue},execute at end plot/.add={}{\global\figmintlegendybarfalse}},
+    figmint bar/.style={figmint/value y grid,/tikz/ybar,bar direction=y,bar width=\figmintbarwidth,enlarge x limits=0.12,fill=.!30!\figmintbackgroundcolor,fill opacity=1,solid,mark=none,figmint bar legend},
     figmint grouped bar/.style 2 args={figmint bar,bar width={\fpeval{min(\figmintgroupedbarwidth,\figmintbargroupwidth / (#1))}},bar shift={\fpeval{(#2 - (#1 + 1) / 2) * min(\figmintgroupedbarwidth,\figmintbargroupwidth / (#1))}}},
-    figmint horizontal bar/.style={figmint/value x grid,/tikz/xbar,bar direction=x,bar width=\figmintbarwidth,enlarge y limits=0.12,fill=.!30!\figmintbackgroundcolor,fill opacity=1,solid,mark=none,figmint bar legend,execute at begin plot/.add={}{\global\figmintlegendxbartrue},execute at end plot/.add={}{\global\figmintlegendxbarfalse}},
+    figmint horizontal bar/.style={figmint/value x grid,/tikz/xbar,bar direction=x,bar width=\figmintbarwidth,enlarge y limits=0.12,fill=.!30!\figmintbackgroundcolor,fill opacity=1,solid,mark=none,figmint bar legend},
     figmint area/.style={figmint/value y grid,no markers,fill=.,fill opacity=0.18},
     figmint interval/.style={figmint/value y grid,draw=none,fill=\figmintcycleonecolor,fill opacity=0.18,/pgfplots/on layer=pre main},
     figmint heatmap/.style={
         enlargelimits=false,
         grid=none,
-        axis line style/.append style={/pgfplots/on layer=axis foreground},
-        tick style/.append style={/pgfplots/on layer=axis foreground},
-        minor tick style/.append style={/pgfplots/on layer=axis foreground},
     },
     figmint colorbar/.style={
         colorbar right,
@@ -1658,81 +2159,6 @@
         vertical sep=\figmintgroupverticalsep,
     },
     figmint group/.style={/pgfplots/group style={figmint}},
-    figmint/theme normal/.style={
-        axis background/.style={fill=FigmintNormalBackground},
-        axis line style={draw=FigmintNormalEdge},
-        tick style={draw=FigmintNormalEdge},
-        minor tick style={draw=FigmintNormalEdge},
-        major grid style={draw=FigmintNormalGrid},
-        label style={text=FigmintNormalText},
-        title style={text=FigmintNormalText},
-        tick label style={text=FigmintNormalText},
-        every node near coord/.append style={text=FigmintNormalText},
-        legend style={fill=FigmintNormalBackground,text=FigmintNormalText},
-        cycle list name=figmint normal,
-        bar cycle list/.style={cycle list name=figmint normal},
-        colormap name=figmint plasma,
-    },
-    figmint/theme latte/.style={
-        axis background/.style={fill=FigmintLatteBackground},
-        axis line style={draw=FigmintLatteEdge},
-        tick style={draw=FigmintLatteEdge},
-        minor tick style={draw=FigmintLatteEdge},
-        major grid style={draw=FigmintLatteEdge},
-        label style={text=FigmintLatteText},
-        title style={text=FigmintLatteText},
-        tick label style={text=FigmintLatteText},
-        every node near coord/.append style={text=FigmintLatteText},
-        legend style={fill=FigmintLatteBackground,text=FigmintLatteText},
-        cycle list name=figmint latte,
-        bar cycle list/.style={cycle list name=figmint latte},
-        colormap name=figmint plasma,
-    },
-    figmint/theme frappe/.style={
-        axis background/.style={fill=FigmintFrappeBackground},
-        axis line style={draw=FigmintFrappeEdge},
-        tick style={draw=FigmintFrappeEdge},
-        minor tick style={draw=FigmintFrappeEdge},
-        major grid style={draw=FigmintFrappeEdge},
-        label style={text=FigmintFrappeText},
-        title style={text=FigmintFrappeText},
-        tick label style={text=FigmintFrappeText},
-        every node near coord/.append style={text=FigmintFrappeText},
-        legend style={fill=FigmintFrappeBackground,text=FigmintFrappeText},
-        cycle list name=figmint frappe,
-        bar cycle list/.style={cycle list name=figmint frappe},
-        colormap name=figmint plasma,
-    },
-    figmint/theme macchiato/.style={
-        axis background/.style={fill=FigmintMacchiatoBackground},
-        axis line style={draw=FigmintMacchiatoEdge},
-        tick style={draw=FigmintMacchiatoEdge},
-        minor tick style={draw=FigmintMacchiatoEdge},
-        major grid style={draw=FigmintMacchiatoEdge},
-        label style={text=FigmintMacchiatoText},
-        title style={text=FigmintMacchiatoText},
-        tick label style={text=FigmintMacchiatoText},
-        every node near coord/.append style={text=FigmintMacchiatoText},
-        legend style={fill=FigmintMacchiatoBackground,text=FigmintMacchiatoText},
-        cycle list name=figmint macchiato,
-        bar cycle list/.style={cycle list name=figmint macchiato},
-        colormap name=figmint plasma,
-    },
-    figmint/theme mocha/.style={
-        axis background/.style={fill=FigmintMochaBackground},
-        axis line style={draw=FigmintMochaEdge},
-        tick style={draw=FigmintMochaEdge},
-        minor tick style={draw=FigmintMochaEdge},
-        major grid style={draw=FigmintMochaEdge},
-        label style={text=FigmintMochaText},
-        title style={text=FigmintMochaText},
-        tick label style={text=FigmintMochaText},
-        every node near coord/.append style={text=FigmintMochaText},
-        legend style={fill=FigmintMochaBackground,text=FigmintMochaText},
-        cycle list name=figmint mocha,
-        bar cycle list/.style={cycle list name=figmint mocha},
-        colormap name=figmint plasma,
-    },
     figmint current/.style={
         /pgfplots/figmint/base axes,
         /pgfplots/figmint/font,
@@ -1743,28 +2169,6 @@
     figmint options/.code={\figmintset{#1}},
     figmint/.style={/pgfplots/figmint options={#1},/pgfplots/figmint current},
     figmint/.default={},
-    figmint finish at/.style n args={4}{
-        figmint legend manual,
-        legend columns=#4,
-        legend cell align=left,
-        transpose legend=false,
-        legend style={at={(axis cs:#1,#2)},anchor=#3},
-    },
-    figmint finish upper right/.style n args={3}{figmint finish at={#1}{#2}{north east}{#3}},
-    figmint finish upper left/.style n args={3}{figmint finish at={#1}{#2}{north west}{#3}},
-    figmint finish lower left/.style n args={3}{figmint finish at={#1}{#2}{south west}{#3}},
-    figmint finish lower right/.style n args={3}{figmint finish at={#1}{#2}{south east}{#3}},
-    figmint finish right/.style n args={3}{figmint finish at={#1}{#2}{east}{#3}},
-    figmint finish center right/.style n args={3}{figmint finish at={#1}{#2}{east}{#3}},
-    figmint finish center left/.style n args={3}{figmint finish at={#1}{#2}{west}{#3}},
-    figmint finish lower center/.style n args={3}{figmint finish at={#1}{#2}{south}{#3}},
-    figmint finish upper center/.style n args={3}{figmint finish at={#1}{#2}{north}{#3}},
-    figmint finish center/.style n args={3}{figmint finish at={#1}{#2}{center}{#3}},
-    figmint normal/.style={/pgfplots/figmint={theme=normal}},
-    figmint latte/.style={/pgfplots/figmint={theme=latte}},
-    figmint frappe/.style={/pgfplots/figmint={theme=frappe}},
-    figmint macchiato/.style={/pgfplots/figmint={theme=macchiato}},
-    figmint mocha/.style={/pgfplots/figmint={theme=mocha}},
     every linear axis/.append style={/pgfplots/figmint/text tick labels},
     every semilogy axis/.append style={/pgfplots/figmint/text x tick labels},
     every semilogx axis/.append style={/pgfplots/figmint/text y tick labels},

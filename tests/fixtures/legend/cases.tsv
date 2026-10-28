@@ -1,0 +1,6 @@
+case	kind	series	location	anchor	columns
+free-upper-left	polygon	region	best	north west	1
+free-center	polygon	t,b,l,r	best	center	2
+free-top	polygon	a,b,c,d	best	north east	2
+bars-right	bar	p,q	best	north west	1
+fixed-lower-right	line	u,v,w	south east	south east	1

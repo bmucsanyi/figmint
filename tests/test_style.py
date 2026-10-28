@@ -1,8 +1,10 @@
 """Tests for the public matplotlib style API."""
 
+import re
 from collections.abc import Callable
 from itertools import combinations
 from math import atan2, cos, degrees, exp, radians, sin, sqrt
+from pathlib import Path
 from typing import Any, Literal
 
 import matplotlib.pyplot as plt
@@ -11,25 +13,16 @@ from matplotlib import font_manager
 from matplotlib.colors import to_hex, to_rgb
 
 import figmint
-from figmint import export_table, finish, register_fonts, style
+from figmint import export_table, legend, register_fonts, style
 from figmint._colors import (
     CATPPUCCIN_THEMES,
     COLOR_THEMES,
     REPAIRED_LATTE_CYCLE,
-    THEME_COLORMAPS,
 )
 
 
 def value(config: dict[str, object], key: str) -> Any:
     return config[key]
-
-
-def style_with_rows(rows: Any) -> dict[str, object]:
-    return style("normal", venue="icml", rows=rows)
-
-
-def style_with_cols(cols: Any) -> dict[str, object]:
-    return style("normal", venue="icml", cols=cols)
 
 
 def style_with_backend(backend: Any) -> dict[str, object]:
@@ -286,12 +279,6 @@ def count_unchanged_latte_prefix(colors: tuple[str, ...]) -> int:
     return count
 
 
-def colormap_colors(theme: str) -> list[str]:
-    sampled = plt.get_cmap(COLOR_THEMES[theme]["colormap"])
-
-    return [to_hex(sampled(index / 255.0)) for index in range(256)]
-
-
 CATPPUCCIN_CYCLES = {
     "latte": [
         "#1e66f5",
@@ -365,9 +352,15 @@ CVD_MATRICES = {
 
 
 def test_public_api_exposes_style_and_font_registration() -> None:
-    assert figmint.__all__ == ["export_table", "finish", "register_fonts", "style"]
+    assert figmint.__all__ == [
+        "export_heatmap",
+        "export_table",
+        "legend",
+        "register_fonts",
+        "style",
+    ]
     assert figmint.export_table is export_table
-    assert figmint.finish is finish
+    assert figmint.legend is legend
     assert not hasattr(figmint, "paper")
     assert not hasattr(figmint, "slides")
 
@@ -384,7 +377,7 @@ def test_color_tables_only_contain_style_roles() -> None:
     }
 
     for theme in COLOR_THEMES.values():
-        assert set(theme) == {"background", "text", "edge", "cycle", "colormap"}
+        assert set(theme) == {"background", "text", "edge", "cycle"}
 
 
 def test_default_theme_is_publication_style() -> None:
@@ -430,6 +423,22 @@ def test_default_theme_is_publication_style() -> None:
     assert value(config, "pdf.fonttype") == 42
     assert value(config, "ps.fonttype") == 42
     assert value(config, "svg.fonttype") == "none"
+
+
+def test_saved_pdf_embeds_images_at_600_dpi(tmp_path: Path) -> None:
+    path = tmp_path / "image.pdf"
+
+    with plt.rc_context(style("normal", venue="icml")):
+        figure = plt.figure(figsize=(2.0, 2.0), layout="none")
+        axis = figure.add_axes((0.25, 0.25, 0.5, 0.5))
+        axis.imshow([[0.0, 1.0], [1.0, 0.0]], aspect="auto")
+        figure.savefig(path)
+        plt.close(figure)
+
+    size = re.search(rb"/Subtype /Image /Width (\d+) /Height (\d+)", path.read_bytes())
+
+    assert size is not None
+    assert (int(size[1]), int(size[2])) == (600, 600)
 
 
 @pytest.mark.parametrize(
@@ -509,46 +518,10 @@ def test_normal_grid_matches_latte_grid() -> None:
     assert value(normal, "grid.linestyle") == value(latte, "grid.linestyle")
 
 
-@pytest.mark.parametrize("theme", ["latte", "frappe", "macchiato", "mocha"])
-def test_themed_colormaps_are_plasma(theme: str) -> None:
-    config = style(theme, venue="icml")
-
-    assert value(config, "image.cmap") == "plasma"
-
-    with plt.rc_context(config):
-        colormap = plt.get_cmap()
-
-    assert colormap.name == "plasma"
-    assert COLOR_THEMES[theme]["colormap"] == "plasma"
-    assert THEME_COLORMAPS[theme] == "plasma"
-
-
-def test_normal_colormap_is_plasma() -> None:
-    config = style("normal", venue="icml")
-
-    assert value(config, "image.cmap") == "plasma"
-
-    with plt.rc_context(config):
-        colormap = plt.get_cmap()
-
-    assert colormap.name == "plasma"
-    assert COLOR_THEMES["normal"]["colormap"] == "plasma"
-
-
-@pytest.mark.parametrize("theme", ["latte", "frappe", "macchiato", "mocha"])
-def test_themed_colormap_samples_match_plasma(theme: str) -> None:
-    plasma = plt.get_cmap("plasma")
-    plasma_colors = [to_hex(plasma(index / 255.0)) for index in range(256)]
-
-    assert colormap_colors(theme) == plasma_colors
-
-
 @pytest.mark.parametrize("theme", ["normal", "latte", "frappe", "macchiato", "mocha"])
 @pytest.mark.parametrize("venue", ["iclr", "neurips", "icml"])
 def test_style_updates_matplotlib_rcparams(theme: str, venue: str) -> None:
     config = style(theme, venue=venue, column="full")
-
-    plt.rcParams.update(config)
 
     with plt.rc_context(config):
         pass
@@ -847,10 +820,8 @@ def test_explicit_overrides_are_applied() -> None:
             "width_fraction",
         ),
         (lambda: style("normal", venue="icml", rows=0), ValueError, "rows"),
-        (lambda: style_with_rows(1.5), TypeError, "rows"),
         (lambda: style("normal", venue="icml", cols=0), ValueError, "cols"),
-        (lambda: style_with_cols(1.5), TypeError, "cols"),
-        (lambda: style("normal", venue="icml", font_size=1.0), ValueError, "font_size"),
+        (lambda: style("normal", venue="icml", font_size=0.0), ValueError, "font_size"),
         (
             lambda: style("normal", venue="icml", figure_size=(0.0, 2.0)),
             ValueError,

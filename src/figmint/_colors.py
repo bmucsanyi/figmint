@@ -8,7 +8,6 @@ class ColorTheme(TypedDict):
     text: str
     edge: str
     cycle: tuple[str, ...]
-    colormap: str
 
 
 REPAIRED_LATTE_CYCLE = (
@@ -25,13 +24,7 @@ REPAIRED_LATTE_CYCLE = (
 )
 
 
-THEME_COLORMAPS = {
-    "normal": "plasma",
-    "latte": "plasma",
-    "frappe": "plasma",
-    "macchiato": "plasma",
-    "mocha": "plasma",
-}
+COLORMAP = "plasma"
 
 
 def _catppuccin_themes() -> dict[str, ColorTheme]:
@@ -52,7 +45,6 @@ def _catppuccin_themes() -> dict[str, ColorTheme]:
                 "#209fb5",
                 "#7287fd",
             ),
-            "colormap": THEME_COLORMAPS["latte"],
         },
         "frappe": {
             "background": "#303446",
@@ -70,7 +62,6 @@ def _catppuccin_themes() -> dict[str, ColorTheme]:
                 "#85c1dc",
                 "#babbf1",
             ),
-            "colormap": THEME_COLORMAPS["frappe"],
         },
         "macchiato": {
             "background": "#24273a",
@@ -88,7 +79,6 @@ def _catppuccin_themes() -> dict[str, ColorTheme]:
                 "#7dc4e4",
                 "#b7bdf8",
             ),
-            "colormap": THEME_COLORMAPS["macchiato"],
         },
         "mocha": {
             "background": "#1e1e2e",
@@ -106,7 +96,6 @@ def _catppuccin_themes() -> dict[str, ColorTheme]:
                 "#74c7ec",
                 "#b4befe",
             ),
-            "colormap": THEME_COLORMAPS["mocha"],
         },
     }
 
@@ -114,12 +103,10 @@ def _catppuccin_themes() -> dict[str, ColorTheme]:
 def _color_themes() -> dict[str, ColorTheme]:
     return {
         "normal": {
-            **CATPPUCCIN_THEMES["latte"],
             "background": "#ffffff",
-            "cycle": REPAIRED_LATTE_CYCLE,
-            "colormap": THEME_COLORMAPS["normal"],
             "text": "#000000",
             "edge": "#000000",
+            "cycle": REPAIRED_LATTE_CYCLE,
         },
         **CATPPUCCIN_THEMES,
     }

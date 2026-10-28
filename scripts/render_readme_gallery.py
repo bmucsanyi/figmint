@@ -6,7 +6,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 
-from figmint import finish, register_fonts, style
+from figmint import legend, register_fonts, style
 
 THEMES = ("normal", "latte", "frappe", "macchiato", "mocha")
 CURVE_LABELS = ("baseline", "variant A", "variant B", "variant C")
@@ -43,8 +43,7 @@ def _draw_curves(axis: Axes) -> None:
     axis.set_xlabel(r"Step $t$")
     axis.set_ylabel(r"Relative value")
     _finish_axis(axis)
-    axis.legend(loc="best")
-    finish(axis)
+    legend(axis, loc="best")
 
 
 def _save_theme_preview(*, output_dir: Path, theme: str) -> None:
