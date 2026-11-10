@@ -356,7 +356,9 @@ def test_public_api_exposes_style_and_font_registration() -> None:
         "export_heatmap",
         "export_table",
         "legend",
+        "provenance",
         "register_fonts",
+        "savefig",
         "style",
     ]
     assert figmint.export_table is export_table

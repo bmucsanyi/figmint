@@ -140,10 +140,10 @@ Supported themes: `normal` (figmint's white-background palette) and the four off
 The Python API exposes five names:
 
 ```python
-from figmint import style, legend, register_fonts, export_table, export_heatmap
+from figmint import style, legend, register_fonts, export_table, export_heatmap, savefig, provenance
 ```
 
-`style(...)` returns matplotlib rcParams. `legend(axis, ...)` creates the legend of an axes and places it. `register_fonts(...)` makes matplotlib aware of font files on disk when its cache fails to find them. `export_table(...)` and `export_heatmap(...)` are the bridge to the pgfplots backend.
+`style(...)` returns matplotlib rcParams. `legend(axis, ...)` creates the legend of an axes and places it. `register_fonts(...)` makes matplotlib aware of font files on disk when its cache fails to find them. `export_table(...)` and `export_heatmap(...)` are the bridge to the pgfplots backend. `savefig(figure, path, ...)` saves a figure with its provenance in the file's metadata, and `provenance(...)` returns that metadata for other writers.
 
 Saved figures use 600 dpi for everything matplotlib rasterizes: images such as those from `imshow`, artists drawn with `rasterized=True`, and PNG output. At matplotlib's default of 100 dpi, an `imshow` heatmap in a PDF is a coarse bitmap.
 
@@ -289,6 +289,18 @@ export_heatmap("paper/data/entropy.png", entropy(x, y), vmin=0.0, vmax=np.log(2.
 ```
 
 `forget plot` keeps the image out of the legend and the cycle list, which would otherwise give the first legend entry and the first cycle color to the image. `\addplot graphics` finds the file the way `\includegraphics` does, so set `\graphicspath` when the data lives in another directory. Sample at least as finely as the figure is shown: a panel a quarter of a slide wide spans about 900 pixels on a 4K screen, so it needs about 1000 values per side. Keep `export_table` with `matrix plot*` for a matrix whose cells should stay visible, such as a confusion matrix, since each cell is then a vector rectangle.
+
+## `savefig`
+
+`savefig(figure, path, results=..., repo=...)` saves through `Figure.savefig` and writes the figure's provenance into the PDF information dictionary or the PNG text chunks: the repository name, the commit, whether the working tree had uncommitted changes, the script that ran, and the results it read. A figure found in a paper or a deck months later can then be traced back to the code and the data that produced it.
+
+```python
+from figmint import savefig
+
+savefig(figure, "paper/figures/loss.pdf", results="results/arms/2026-10-18", repo=ROOT)
+```
+
+`repo` is any directory inside the repository to record and defaults to the directory of the running script. `results` is recorded as given, so pass a path relative to the repository. Outside a git repository the call fails rather than writing a figure with no provenance. `provenance(results=..., repo=...)` returns the same two metadata entries, `Creator` and `Subject`, for callers that save through other means. Read them back with `pdfinfo`, with PyMuPDF, or with Pillow for PNGs.
 
 ## Color choices
 
