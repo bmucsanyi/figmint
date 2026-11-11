@@ -47,7 +47,7 @@ def test_format_ticks_touches_only_linear_axes_with_the_default_formatter() -> N
     assert custom.xaxis.get_major_formatter() is own
 
 
-def test_formatted_ticks_have_no_trailing_zeros() -> None:
+def test_formatted_ticks_are_formulas_without_trailing_zeros() -> None:
     figure = Figure()
     canvas = FigureCanvasAgg(figure)
     axes = figure.subplots()
@@ -56,8 +56,8 @@ def test_formatted_ticks_have_no_trailing_zeros() -> None:
     canvas.draw()
 
     assert [label.get_text() for label in axes.get_xticklabels()] == [
-        MINUS + "1",
-        "0",
-        "0.5",
-        "1",
+        r"$\mathdefault{" + MINUS + "1}$",
+        r"$\mathdefault{0}$",
+        r"$\mathdefault{0.5}$",
+        r"$\mathdefault{1}$",
     ]

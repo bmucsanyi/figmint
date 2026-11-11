@@ -7,7 +7,7 @@ figmint draws every figure by these rules, through the settings of `style` and `
 - Boxes 0.55 of the spacing wide with caps 0.44 wide, filled with 12% of their color over the background and outlined in it, the median as wide as a plot line, the whiskers as an axis line, and no fliers.
 - A colorbar 4 bp wide, 4 bp from the axes and as tall, with no frame.
 - Bands with opacity 0.18 and no edge.
-- Numbers with the digits and the decimal point in the text font, the minus sign from the math font, and no trailing zeros.
+- Numbers in math mode, as pgfplots and siunitx set numbers: the digits, the decimal point, and the minus sign come from the document's math font. No trailing zeros.
 - Automatic limits as the range of the data enlarged by 5% on each side.
 - The canvas exactly the requested size, with the content 3 bp inside it.
 - Axis lines 0.5 bp wide, plot lines 1 bp, markers 3 bp, major ticks 3 bp long and outside the axes, only the left and bottom spines, and a legend without a frame line.

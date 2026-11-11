@@ -1,4 +1,4 @@
-"""Tick numbers by the look: no trailing zeros, and a real minus sign."""
+"""Tick numbers by the look: in math mode, with no trailing zeros."""
 
 import numpy as np
 from matplotlib.figure import Figure
@@ -10,11 +10,7 @@ DECIMALS = 10
 
 
 def format_number(value: float) -> str:
-    r"""Return a number with no trailing zeros and U+2212 as its minus sign.
-
-    The digits and the decimal point are plain text, so a document sets them in
-    its text font; the pgf backend sets U+2212 as ``\ensuremath{-}``, in the
-    math font.
+    """Return a number with no trailing zeros and U+2212 as its minus sign.
 
     Returns:
         The number as text.
@@ -29,17 +25,23 @@ def format_number(value: float) -> str:
 
 
 class NumberFormatter(Formatter):
-    """Formats ticks through ``format_number``."""
+    r"""Formats ticks through ``format_number``, in math mode.
+
+    A label is ``$\mathdefault{...}$``, as matplotlib's own formatters write
+    it. A document typesets it as a formula, so the digits and the minus sign
+    come from its math font, as pgfplots and siunitx set numbers. matplotlib's
+    own renderer sets ``\mathdefault`` in the label's font.
+    """
 
     def __call__(self, x: float, pos: int | None = None) -> str:  # noqa: ARG002
-        return format_number(x)
+        return rf"$\mathdefault{{{format_number(x)}}}$"
 
 
 def format_ticks(figure: Figure) -> None:
-    r"""Give every linear axis with matplotlib's formatter the formatter of the look.
+    """Give every linear axis with matplotlib's formatter the formatter of the look.
 
-    A log axis keeps matplotlib's formatter, whose exponents the document sets
-    through ``\mathdefault``, and an axis with a formatter of its own keeps it.
+    A log axis keeps matplotlib's formatter, which writes its labels in math
+    mode already, and an axis with a formatter of its own keeps it.
     """
     for axes in figure.axes:
         for axis in (axes.xaxis, axes.yaxis):

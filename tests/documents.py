@@ -217,13 +217,22 @@ def _log(_: Figure, axes: Axes) -> None:
     legend(axes, loc="best")
 
 
+def _sublog(_: Figure, axes: Axes) -> None:
+    # Less than a decade, so matplotlib labels the minor ticks as well.
+    axes.plot(STEPS, 2.0 + 6.0 * np.exp(-0.05 * STEPS), label="baseline")
+    axes.set_yscale("log")
+    axes.set_ylim(2.0, 8.0)
+    axes.set_xlabel(r"Step $t$")
+    legend(axes, loc="best")
+
+
 def _bars(_: Figure, axes: Axes) -> None:
     for index in range(3):
         bar(
             axes,
             [1, 2, 3],
             [0.5 + 0.1 * index, 0.7, 0.4],
-            label=f"series {index}",
+            label=f"series {('one', 'two', 'three')[index]}",
             group=(index, 3),
         )
 
@@ -281,9 +290,12 @@ def _grid(_: Figure, axes: np.ndarray) -> None:
         panel.set_xlabel(r"Step $t$")
 
 
+# No text label of these figures holds a digit, so every digit of a figure is a
+# tick number or part of a formula, which the picture test relies on.
 PLOTS = {
     "lines": _lines,
     "log": _log,
+    "sublog": _sublog,
     "bars": _bars,
     "hbars": _hbars,
     "scatter": _scatter,

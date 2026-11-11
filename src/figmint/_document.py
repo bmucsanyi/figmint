@@ -372,35 +372,21 @@ class Document:
 
 
 def _figmint_lines(line: Line) -> list[str]:
-    r"""Return the lines figmint adds after the document's.
+    """Return the lines figmint adds after the document's.
 
-    The first lines put the digits of tick labels that matplotlib sets in math
-    mode, those of a log axis, into the text font: ``\mathdefault{10^{2}}``
-    becomes ``\text{10}^{\text{2}}``, and the minus sign of an exponent stays
-    in the math font through the ``\ensuremath{-}`` the pgf backend writes.
-    The backend makes ``^`` active inside its text, so the macros are defined
-    with that character active. A math alphabet would do the same but needs a
-    math family, of which stix2 leaves none under pdfLaTeX. The last line pins
-    the script sizes: matplotlib's own preamble loads scrextend with the size
-    as ``9.000000pt``, after which LuaLaTeX with unicode-math sets the scripts
-    of a 9pt figure at 6.3pt and 4.5pt.
+    The first pins the script sizes: matplotlib's own preamble loads scrextend
+    with the size as ``9.000000pt``, after which LuaLaTeX with unicode-math
+    sets the scripts of a 9pt figure at 6.3pt and 4.5pt. The second removes
+    the page number: matplotlib typesets the figure as a page of an article,
+    whose number would stand below the figure's box, clipped but in the file.
+    Tick labels are formulas, as matplotlib writes them, and need nothing else.
     """
     return [
-        r"\usepackage{amstext}",
-        r"\makeatletter",
-        r"\begingroup\catcode`\^=\active",
-        r"\gdef\figmint@power#1^#2\figmint@stop{\text{#1}^{\text{#2}}}",
-        (
-            r"\gdef\figmint@mathdefault#1{\in@{^}{#1}"
-            r"\ifin@\figmint@power#1\figmint@stop\else\text{#1}\fi}"
-        ),
-        r"\endgroup",
-        r"\renewcommand{\mathdefault}[1]{\figmint@mathdefault{#1}}",
-        r"\makeatother",
         (
             rf"\DeclareMathSizes{{{line.size:f}}}{{{line.size:g}}}"
             rf"{{{line.script}}}{{{line.scriptscript}}}"
         ),
+        r"\pagestyle{empty}",
     ]
 
 

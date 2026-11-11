@@ -96,7 +96,8 @@ that no document includes, with matplotlib setting the text. Save it with
 `hbar`, `area`, `interval`, `scatter`, `heatmap`, `colorbar`, and `boxplot`
 draw what settings cannot express, `legend` places the legend by
 [`docs/legend.md`](docs/legend.md), and every figure saved through figmint
-prints its tick numbers without trailing zeros and with a real minus sign.
+prints its tick numbers as formulas, in the document's math font, without
+trailing zeros.
 
 ## Public interface
 
