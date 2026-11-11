@@ -62,7 +62,7 @@ def draw_nothing(_: Figure, axes: Axes) -> None:
 
 def test_another_version_stops(tmp_path: Path) -> None:
     file = compiled_times(tmp_path)
-    file.write_text(file.read_text().replace("figmint=0.1.0", "figmint=9.9.9"))
+    file.write_text(file.read_text().replace("figmint=0.2.0", "figmint=9.9.9"))
 
     with pytest.raises(ValueError, match=r"written by figmint 9\.9\.9"):
         Document(file, results="results/run")

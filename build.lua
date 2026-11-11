@@ -192,7 +192,7 @@ end
 local function check_header(document, file)
   local content = table.concat(file.header, "\n")
   local expected = {
-    "figmint=0.1.0",
+    "figmint=0.2.0",
     "engine=" .. document.engine,
     "directory=" .. document.figures .. "/",
   }
