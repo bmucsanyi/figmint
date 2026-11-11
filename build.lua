@@ -270,9 +270,12 @@ local function check_deck(document, file)
     return false
   end
   return check_header(document, file)
-    and check_preamble_lines(document, file, { "\\usepackage {macromint}" })
+    and check_preamble_lines(document, file, {
+      "\\usepackage {slidemintfonts}",
+      "\\usepackage {macromint}",
+    })
     and near("deck first width", first.width, widths.column, 0.001)
-    and near("deck first height", first.height, 0.5625 * widths.column, 0.001)
+    and near("deck first height", first.height, 0.48 * widths.column, 0.001)
     and near("deck second height", second.height, 0.5 * second.width, 0.001)
     -- The frame has two slides; the figure without an overlay is written on both.
     and equal("deck first count", first.count, 2)

@@ -185,6 +185,23 @@ def test_the_probe_stops_when_the_lines_give_other_fonts(tmp_path: Path) -> None
     assert not (tmp_path / "figures").exists()
 
 
+def test_the_probe_stops_when_the_deck_font_line_is_missing(tmp_path: Path) -> None:
+    source = place("deck", tmp_path)
+    compile_document(source, "lualatex")
+    file = source.with_suffix(".figmint")
+    file.write_text(
+        file.read_text().replace("preamble=\\usepackage {slidemintfonts}\n", "")
+    )
+    document = Document(file, results="results/run", repo=REPO)
+    register_plots(document)
+
+    with pytest.raises(RuntimeError, match="do not reproduce") as error:
+        document.main([])
+
+    assert "Roboto Condensed Light" in str(error.value)
+    assert not (tmp_path / "figures").exists()
+
+
 def test_the_pdf_records_the_line_and_the_provenance_through_the_pgf_canvas(
     tmp_path: Path,
 ) -> None:

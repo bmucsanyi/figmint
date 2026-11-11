@@ -36,13 +36,26 @@ from figmint import (
 REPO = Path(__file__).resolve().parents[1]
 DOCUMENTS = REPO / "tests" / "documents"
 # The packages a test document loads, copied beside it as a paper vendors them:
-# this package, two siblings, and the venue styles as the venues publish them.
+# this package, three siblings, and the venue styles as the venues publish them.
 PACKAGES = (
     REPO / "tex" / "latex" / "figmint" / "figmint.sty",
     REPO.parent / "macromint" / "tex" / "latex" / "macromint" / "macromint.sty",
     REPO.parent / "papermint" / "tex" / "latex" / "papermint" / "papermint.sty",
+    *(
+        REPO.parent / "slidemint" / "tex" / "latex" / "slidemint" / name
+        for name in (
+            "beamerthemeslidemint.sty",
+            "beamercolorthemeslidemint.sty",
+            "beamerfontthemeslidemint.sty",
+            "beamerinnerthemeslidemint.sty",
+            "beamerouterthemeslidemint.sty",
+            "slidemintfonts.sty",
+        )
+    ),
     *sorted((REPO / "tests" / "venues").glob("*.sty")),
 )
+# minted, which slidemint loads, runs latexminted from this environment.
+SLIDEMINT_VENV = REPO.parent / "slidemint" / ".venv" / "bin"
 BIG_POINTS_PER_POINT = 72.0 / 72.27
 # Sub- and superscripts sit at most this many big points off the baseline of
 # their line, far less than the distance to the next line.
@@ -87,7 +100,11 @@ def compile_document(source: Path, engine: str) -> Path:
     completed = subprocess.run(  # noqa: S603
         [engine, "-interaction=nonstopmode", "-halt-on-error", source.name],
         cwd=source.parent,
-        env={**os.environ, "max_print_line": "10000"},
+        env={
+            **os.environ,
+            "max_print_line": "10000",
+            "PATH": f"{SLIDEMINT_VENV}{os.pathsep}{os.environ['PATH']}",
+        },
         capture_output=True,
         check=False,
     )

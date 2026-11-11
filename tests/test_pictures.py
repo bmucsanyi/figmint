@@ -26,6 +26,7 @@ VENUES = [
     ("neurips", "pdflatex"),
     ("iclr", "pdflatex"),
     ("xelatex", "xelatex"),
+    ("deck", "lualatex"),
 ]
 BOX_TOLERANCE = 0.01
 SIZE_TOLERANCE = 0.05
