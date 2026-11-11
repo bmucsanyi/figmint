@@ -1,0 +1,27 @@
+\documentclass{article}
+\usepackage[font=small]{caption}
+\usepackage[font=footnotesize]{subcaption}
+\usepackage{figmint}
+\figmintdirectory{build/subcaption-figures/}
+
+\begin{document}
+
+\typeout{FIGMINT_TEST name=subcaption;linewidth=\the\linewidth}
+
+\begin{figure}
+  \centering
+  \begin{subfigure}{0.45\linewidth}
+    \typeout{FIGMINT_TEST name=subfigure;linewidth=\the\linewidth}
+    \figmintgraphic{sub}
+    \caption{Sub.}
+  \end{subfigure}
+  \caption{Main.}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \figmintgraphic{main}
+  \caption{Main only.}
+\end{figure}
+
+\end{document}

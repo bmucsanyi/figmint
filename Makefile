@@ -44,28 +44,29 @@ test:
 .PHONY: ruff-format ruff-format-check
 
 ruff-format:
-	@uv run --no-sync ruff format src tests
+	@uv run --no-sync ruff format src tests scripts
 
 ruff-format-check:
-	@uv run --no-sync ruff format --check src tests
+	@uv run --no-sync ruff format --check src tests scripts
 
 .PHONY: ruff-check
 
 ruff-check-fix:
-	@uv run --no-sync ruff check src tests --fix
+	@uv run --no-sync ruff check src tests scripts --fix
 
 ruff-check:
-	@uv run --no-sync ruff check src tests
+	@uv run --no-sync ruff check src tests scripts
 
 .PHONY: lint
 
 lint:
 	make ruff-format-check
 	make ruff-check
+	@uv run --no-sync ty check src tests scripts
 
 .PHONY: lint-fix
 
 lint-fix:
-	@uv run --no-sync ruff format src tests
-	@uv run --no-sync ruff check src tests --fix
-	@uv run --no-sync ty check src tests
+	@uv run --no-sync ruff format src tests scripts
+	@uv run --no-sync ruff check src tests scripts --fix
+	@uv run --no-sync ty check src tests scripts

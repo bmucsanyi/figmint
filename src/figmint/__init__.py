@@ -1,17 +1,34 @@
-"""Matplotlib style API."""
+"""Figures drawn with matplotlib to what the document asks for."""
 
-from ._heatmap import export_heatmap
-from ._legend import legend
-from ._provenance import provenance, savefig
-from ._style import register_fonts, style
-from ._table import export_table
+from figmint._document import Document
+from figmint._legend import legend
+from figmint._plots import (
+    area,
+    bar,
+    boxplot,
+    colorbar,
+    hbar,
+    heatmap,
+    interval,
+    scatter,
+)
+from figmint._provenance import provenance, savefig
+from figmint._style import style
+from figmint._table import export_table
 
 __all__ = [
-    "export_heatmap",
+    "Document",
+    "area",
+    "bar",
+    "boxplot",
+    "colorbar",
     "export_table",
+    "hbar",
+    "heatmap",
+    "interval",
     "legend",
     "provenance",
-    "register_fonts",
     "savefig",
+    "scatter",
     "style",
 ]

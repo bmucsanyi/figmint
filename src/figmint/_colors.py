@@ -1,16 +1,22 @@
-"""Color tables used by the matplotlib styles."""
+"""The colors of the five themes, as figmint.sty defines them."""
 
-from typing import TypedDict
+from typing import Literal, TypedDict
+
+Theme = Literal["normal", "latte", "frappe", "macchiato", "mocha"]
 
 
 class ColorTheme(TypedDict):
     background: str
     text: str
     edge: str
+    grid: str
     cycle: tuple[str, ...]
 
 
-REPAIRED_LATTE_CYCLE = (
+COLORMAP = "plasma"
+
+# The Catppuccin Latte cycle repaired for white backgrounds, see docs/colors.md.
+NORMAL_CYCLE = (
     "#1e66f5",
     "#fd6309",
     "#3d7e44",
@@ -23,94 +29,84 @@ REPAIRED_LATTE_CYCLE = (
     "#6490fe",
 )
 
-
-COLORMAP = "plasma"
-
-
-def _catppuccin_themes() -> dict[str, ColorTheme]:
-    return {
-        "latte": {
-            "background": "#eff1f5",
-            "text": "#4c4f69",
-            "edge": "#9ca0b0",
-            "cycle": (
-                "#1e66f5",
-                "#fe640b",
-                "#40a02b",
-                "#8839ef",
-                "#d20f39",
-                "#df8e1d",
-                "#179299",
-                "#ea76cb",
-                "#209fb5",
-                "#7287fd",
-            ),
-        },
-        "frappe": {
-            "background": "#303446",
-            "text": "#c6d0f5",
-            "edge": "#737994",
-            "cycle": (
-                "#8caaee",
-                "#ef9f76",
-                "#a6d189",
-                "#ca9ee6",
-                "#e78284",
-                "#e5c890",
-                "#81c8be",
-                "#f4b8e4",
-                "#85c1dc",
-                "#babbf1",
-            ),
-        },
-        "macchiato": {
-            "background": "#24273a",
-            "text": "#cad3f5",
-            "edge": "#6e738d",
-            "cycle": (
-                "#8aadf4",
-                "#f5a97f",
-                "#a6da95",
-                "#c6a0f6",
-                "#ed8796",
-                "#eed49f",
-                "#8bd5ca",
-                "#f5bde6",
-                "#7dc4e4",
-                "#b7bdf8",
-            ),
-        },
-        "mocha": {
-            "background": "#1e1e2e",
-            "text": "#cdd6f4",
-            "edge": "#6c7086",
-            "cycle": (
-                "#89b4fa",
-                "#fab387",
-                "#a6e3a1",
-                "#cba6f7",
-                "#f38ba8",
-                "#f9e2af",
-                "#94e2d5",
-                "#f5c2e7",
-                "#74c7ec",
-                "#b4befe",
-            ),
-        },
-    }
-
-
-def _color_themes() -> dict[str, ColorTheme]:
-    return {
-        "normal": {
-            "background": "#ffffff",
-            "text": "#000000",
-            "edge": "#000000",
-            "cycle": REPAIRED_LATTE_CYCLE,
-        },
-        **CATPPUCCIN_THEMES,
-    }
-
-
-CATPPUCCIN_THEMES = _catppuccin_themes()
-COLOR_THEMES = _color_themes()
+COLOR_THEMES: dict[str, ColorTheme] = {
+    "normal": {
+        "background": "#ffffff",
+        "text": "#000000",
+        "edge": "#000000",
+        "grid": "#9ca0b0",
+        "cycle": NORMAL_CYCLE,
+    },
+    "latte": {
+        "background": "#eff1f5",
+        "text": "#4c4f69",
+        "edge": "#9ca0b0",
+        "grid": "#9ca0b0",
+        "cycle": (
+            "#1e66f5",
+            "#fe640b",
+            "#40a02b",
+            "#8839ef",
+            "#d20f39",
+            "#df8e1d",
+            "#179299",
+            "#ea76cb",
+            "#209fb5",
+            "#7287fd",
+        ),
+    },
+    "frappe": {
+        "background": "#303446",
+        "text": "#c6d0f5",
+        "edge": "#737994",
+        "grid": "#737994",
+        "cycle": (
+            "#8caaee",
+            "#ef9f76",
+            "#a6d189",
+            "#ca9ee6",
+            "#e78284",
+            "#e5c890",
+            "#81c8be",
+            "#f4b8e4",
+            "#85c1dc",
+            "#babbf1",
+        ),
+    },
+    "macchiato": {
+        "background": "#24273a",
+        "text": "#cad3f5",
+        "edge": "#6e738d",
+        "grid": "#6e738d",
+        "cycle": (
+            "#8aadf4",
+            "#f5a97f",
+            "#a6da95",
+            "#c6a0f6",
+            "#ed8796",
+            "#eed49f",
+            "#8bd5ca",
+            "#f5bde6",
+            "#7dc4e4",
+            "#b7bdf8",
+        ),
+    },
+    "mocha": {
+        "background": "#1e1e2e",
+        "text": "#cdd6f4",
+        "edge": "#6c7086",
+        "grid": "#6c7086",
+        "cycle": (
+            "#89b4fa",
+            "#fab387",
+            "#a6e3a1",
+            "#cba6f7",
+            "#f38ba8",
+            "#f9e2af",
+            "#94e2d5",
+            "#f5c2e7",
+            "#74c7ec",
+            "#b4befe",
+        ),
+    },
+}

@@ -1,91 +1,112 @@
-"""Render the README gallery images."""
+"""Render the README gallery: the five themes as a paper shows them.
 
-import math
+A small paper with papermint is compiled, its five figures are drawn through
+``Document``, and each figure is rendered to a PNG. The checkouts of macromint
+and papermint must sit next to this repository, and pdftoppm must be installed.
+"""
+
+import shutil
+import subprocess  # noqa: S404  # pdflatex and pdftoppm on files this script wrote
+import tempfile
 from pathlib import Path
 
-import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 
-from figmint import legend, register_fonts, style
+from figmint import Document, legend
 
-THEMES = ("normal", "latte", "frappe", "macchiato", "mocha")
-CURVE_LABELS = ("baseline", "variant A", "variant B", "variant C")
-CURVE_RATES = (0.045, 0.075, 0.12, 0.19)
-SAMPLE_COUNT = 161
-DPI = 300
-TALK_FIGURE_SIZE = (7.5, 4.25)
-SLIDE_FONT = "Roboto Condensed"
-SLIDE_FONT_FILES = (
-    Path.home() / "Library/Fonts/RobotoCondensed-VariableFont_wght.ttf",
-    Path.home() / "Library/Fonts/RobotoCondensed-Italic-VariableFont_wght.ttf",
+REPO = Path(__file__).resolve().parents[1]
+PAPER = REPO / "scripts" / "gallery" / "main.tex"
+# The packages the paper loads, copied beside it as a paper vendors them.
+PACKAGES = (
+    REPO / "tex" / "latex" / "figmint" / "figmint.sty",
+    REPO.parent / "macromint" / "tex" / "latex" / "macromint" / "macromint.sty",
+    REPO.parent / "papermint" / "tex" / "latex" / "papermint" / "papermint.sty",
 )
+THEMES = ("normal", "latte", "frappe", "macchiato", "mocha")
+LABELS = ("baseline", "variant A", "variant B", "variant C")
+RATES = (0.045, 0.075, 0.12, 0.19)
+STEPS = np.linspace(0.0, 80.0, 161)
+DPI = 300
 
 
-def _curve_points(*, rate: float) -> tuple[list[float], list[float]]:
-    xs = [80.0 * index / (SAMPLE_COUNT - 1) for index in range(SAMPLE_COUNT)]
-    ys = [0.018 + 0.982 * math.exp(-rate * x) for x in xs]
+def draw_curves(figure: Figure, axes: Axes) -> None:  # noqa: ARG001
+    """Draw four decaying curves on a log axis with a legend."""
+    for label, rate in zip(LABELS, RATES, strict=True):
+        axes.plot(STEPS, 0.018 + 0.982 * np.exp(-rate * STEPS), label=label)
 
-    return xs, ys
-
-
-def _finish_axis(axis: Axes) -> None:
-    axis.tick_params(direction="out")
-
-
-def _draw_curves(axis: Axes) -> None:
-    for index, rate in enumerate(CURVE_RATES):
-        xs, ys = _curve_points(rate=rate)
-        axis.plot(xs, ys, label=CURVE_LABELS[index])
-
-    axis.set_xlim(0.0, 80.0)
-    axis.set_ylim(1.0e-2, 1.2)
-    axis.set_yscale("log")
-    axis.set_xlabel(r"Step $t$")
-    axis.set_ylabel(r"Relative value")
-    _finish_axis(axis)
-    legend(axis, loc="best")
+    axes.set_xlim(0.0, 80.0)
+    axes.set_ylim(1.0e-2, 1.2)
+    axes.set_yscale("log")
+    axes.set_xlabel(r"Step $t$")
+    axes.set_ylabel("Relative value")
+    legend(axes, loc="best")
 
 
-def _save_theme_preview(*, output_dir: Path, theme: str) -> None:
-    with plt.rc_context(style(theme, venue="neurips", column="full")):
-        figure, axis = plt.subplots()
-        _draw_curves(axis)
-        figure.savefig(output_dir / f"theme_{theme}.png", dpi=DPI)
-        plt.close(figure)
+def run(command: list[str], directory: Path) -> None:
+    """Run a command in a directory.
 
+    Raises:
+        RuntimeError: If the command fails.
+    """
+    completed = subprocess.run(  # noqa: S603
+        command,
+        cwd=directory,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
-def _save_talk_preview(*, output_dir: Path) -> None:
-    register_fonts(*SLIDE_FONT_FILES)
-
-    with plt.rc_context(
-        style(
-            "frappe",
-            venue="icml",
-            text_font=SLIDE_FONT,
-            font_weight="light",
-            font_size=13.0,
-            figure_size=TALK_FIGURE_SIZE,
-        )
-    ):
-        figure, axis = plt.subplots()
-        _draw_curves(axis)
-        figure.savefig(output_dir / "talk_frappe_overrides.png", dpi=DPI)
-        plt.close(figure)
+    if completed.returncode != 0:
+        msg = f"{command[0]} failed:\n{completed.stdout[-3000:]}"
+        raise RuntimeError(msg)
 
 
 def render_gallery(output_dir: Path) -> None:
-    """Render the README gallery PNGs."""
+    """Render the gallery PNGs into a directory."""
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    for theme in THEMES:
-        _save_theme_preview(output_dir=output_dir, theme=theme)
+    with tempfile.TemporaryDirectory() as temporary:
+        directory = Path(temporary)
 
-    _save_talk_preview(output_dir=output_dir)
+        for package in PACKAGES:
+            shutil.copy(package, directory)
+
+        source = Path(shutil.copy(PAPER, directory))
+        run(
+            ["pdflatex", "-interaction=nonstopmode", "-halt-on-error", source.name],
+            directory,
+        )
+        document = Document(
+            source.with_suffix(".figmint"), results="gallery", repo=REPO
+        )
+
+        for theme in THEMES:
+            document.figure(f"theme_{theme}")(draw_curves)
+
+        document.main(["--all"])
+
+        for theme in THEMES:
+            pdf = directory / "figures" / f"theme_{theme}.pdf"
+            target = output_dir / f"theme_{theme}"
+            run(
+                [
+                    "pdftoppm",
+                    "-png",
+                    "-r",
+                    str(DPI),
+                    "-singlefile",
+                    str(pdf),
+                    str(target),
+                ],
+                directory,
+            )
 
 
 def main() -> None:
     """Render the gallery from the command line."""
-    render_gallery(Path("gallery"))
+    render_gallery(REPO / "gallery")
 
 
 if __name__ == "__main__":

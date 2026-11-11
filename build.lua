@@ -8,23 +8,13 @@ unpackfiles = { }
 local harness = dofile("harness.lua")
 
 local environment = {
-  TEXINPUTS = harness.texinputs({ "./tex/latex/figmint" }),
-}
-
--- Compiled with lualatex.
-local tests = {
-  "catppuccin-check",
-  "caption-font-check",
-  "beamer-caption-font-check",
-  "semantic-grid-check",
-  "tikzscale-check",
-  "legend-optimizer-check",
-  "surface-shading-check",
-}
-
--- Compiled with every engine.
-local engine_neutral_tests = {
-  "engine-neutral-check",
+  TEXINPUTS = harness.texinputs({
+    "./tex/latex/figmint",
+    harness.require_sibling("macromint"),
+    harness.require_sibling("slidemint"),
+  }),
+  -- minted, which slidemint loads, runs latexminted from this environment.
+  PATH = "../slidemint/.venv/bin:" .. os.getenv("PATH"),
 }
 
 local engines = {
@@ -33,173 +23,328 @@ local engines = {
   "pdflatex",
 }
 
--- Expected legend placements of the fixtures shared with the matplotlib tests.
-local function legend_cases()
-  local cases = {}
-  local header = true
-  for line in io.lines("tests/fixtures/legend/cases.tsv") do
-    if header then
-      header = false
-    else
-      local name, _, _, location, anchor, columns =
-        string.match(line, "^([^\t]+)\t([^\t]+)\t([^\t]+)\t([^\t]+)\t([^\t]+)\t([^\t]+)$")
-      local mode = "fixed"
-      if location == "best" then
-        mode = "best"
-      end
-      table.insert(cases, {
-        harness.output("legend-optimizer-check", "lualatex", "log"),
-        "FIGMINT_LEGEND name=" .. name .. ";mode=" .. mode
-          .. ";anchor=" .. anchor .. ";columns=" .. columns .. ";",
-      })
-    end
+-- The documents that write a .figmint file and include figures, with the
+-- engine that compiles them and the directory their figures are read from.
+local documents = {
+  { name = "article-check", engine = "pdflatex", figures = "build/article-figures" },
+  { name = "subcaption-check", engine = "pdflatex", figures = "build/subcaption-figures" },
+  { name = "deck-check", engine = "lualatex", figures = "build/deck-figures" },
+}
+
+local color_checks = {
+  "FIGMINT_COLOR name=FigmintWhite;hex=FFFFFF;expected=FFFFFF",
+  "FIGMINT_COLOR name=FigmintFrappeEdge;hex=737994;expected=737994",
+  "FIGMINT_COLOR name=FigmintMochaCrust;hex=11111B;expected=11111B",
+}
+
+local function read_file(path)
+  local handle = io.open(path, "r")
+  if not handle then
+    print(path .. ": missing")
+    return nil
   end
-  return cases
+  local content = handle:read("*a")
+  handle:close()
+  return content
 end
 
-local function output_checks()
-  local catppuccin = harness.output("catppuccin-check", "lualatex", "log")
-  local caption = harness.output("caption-font-check", "lualatex", "log")
-  local beamer_caption = harness.output("beamer-caption-font-check", "lualatex", "log")
-  local grid = harness.output("semantic-grid-check", "lualatex", "log")
-  local legend = harness.output("legend-optimizer-check", "lualatex", "log")
-  local checks = {
-    { catppuccin, "FIGMINT_COLOR name=FigmintWhite;hex=FFFFFF;expected=FFFFFF" },
-    { catppuccin, "FIGMINT_COLOR name=FigmintFrappeEdge;hex=737994;expected=737994" },
-    { catppuccin, "FIGMINT_COLOR name=FigmintMochaCrust;hex=11111B;expected=11111B" },
-    { caption, "FIGMINT_FONT name=caption;size=9" },
-    { caption, "FIGMINT_FONT name=primary;size=9" },
-    { caption, "FIGMINT_FONT name=secondary;size=9" },
-    { caption, "FIGMINT_FONT name=axis-label;size=9" },
-    { caption, "FIGMINT_FONT name=tick;size=9" },
-    { caption, "FIGMINT_FONT name=legend;size=9" },
-    { caption, "FIGMINT_FONT name=node;size=9" },
-    { caption, "FIGMINT_FONT name=colorbar;size=9" },
-    { beamer_caption, "FIGMINT_FONT name=caption;size=10" },
-    { beamer_caption, "FIGMINT_FONT name=primary;size=10" },
-    { beamer_caption, "FIGMINT_FONT name=secondary;size=10" },
-    { beamer_caption, "FIGMINT_FONT name=axis-label;size=10" },
-    { beamer_caption, "FIGMINT_FONT name=tick;size=10" },
-    { beamer_caption, "FIGMINT_FONT name=legend;size=10" },
-    { beamer_caption, "FIGMINT_FONT name=node;size=10" },
-    { beamer_caption, "FIGMINT_FONT name=colorbar;size=10" },
-    { grid, "FIGMINT_GRID name=base;x=false;y=false" },
-    { grid, "FIGMINT_GRID name=line;x=false;y=true" },
-    { grid, "FIGMINT_GRID name=bar;x=false;y=true" },
-    { grid, "FIGMINT_GRID name=horizontal-bar;x=true;y=false" },
-    { grid, "FIGMINT_GRID name=mixed-line-horizontal-bar;x=true;y=true" },
-    { grid, "FIGMINT_GRID name=mixed-horizontal-bar-line;x=true;y=true" },
-    { grid, "FIGMINT_GRID name=scatter;x=false;y=false" },
-    { grid, "FIGMINT_GRID name=heatmap;x=false;y=false" },
-    { grid, "FIGMINT_COLORMAP name=frappe-heatmap;value=figmint plasma" },
-    { legend, "FIGMINT_HOOK name=no-legend;finished-point=[]" },
-  }
-
-  for _, check in ipairs(legend_cases()) do
-    table.insert(checks, check)
+-- Parses a .figmint file into its header lines and its figures, each with the
+-- fields of its line and the number of lines that named it.
+local function parse_figmint(path)
+  local content = read_file(path)
+  if not content then
+    return nil
   end
+  local file = { header = {}, figures = {} }
+  for line in string.gmatch(content, "[^\n]+") do
+    local name, width, height, rows, cols, theme, size, script, scriptscript, family, series, shape =
+      string.match(line, "^figure=([^;]+);width=([%d.]+);height=([%d.]+);rows=(%d+);cols=(%d+);"
+        .. "theme=(%w+);size=([%d.]+);script=([%d.]+);scriptscript=([%d.]+);"
+        .. "family=([%w-]+);series=(%w+);shape=(%w+);fonts=")
+    if name then
+      local figure = file.figures[name]
+      if figure then
+        figure.count = figure.count + 1
+      else
+        file.figures[name] = {
+          width = tonumber(width), height = tonumber(height),
+          rows = tonumber(rows), cols = tonumber(cols), theme = theme,
+          size = tonumber(size), script = tonumber(script), scriptscript = tonumber(scriptscript),
+          family = family, series = series, shape = shape, count = 1,
+        }
+      end
+    else
+      table.insert(file.header, line)
+    end
+  end
+  return file
+end
 
-  for _, check in ipairs(checks) do
-    if not harness.file_contains(check[1], check[2]) then
-      print(check[1] .. ": missing " .. check[2])
+-- The \linewidth values that a test document reports through \typeout.
+local function linewidths(log_path)
+  local content = read_file(log_path)
+  local widths = {}
+  for name, width in string.gmatch(content, "FIGMINT_TEST name=(%w+);linewidth=([%d.]+)pt") do
+    widths[name] = tonumber(width)
+  end
+  return widths
+end
+
+local function count_in(content, needle)
+  local count = 0
+  local position = 1
+  while true do
+    local found = string.find(content, needle, position, true)
+    if not found then
+      return count
+    end
+    count = count + 1
+    position = found + #needle
+  end
+end
+
+local function pages(pdf)
+  local handle = io.popen("pdfinfo " .. harness.quote(pdf))
+  local output = handle:read("*a")
+  handle:close()
+  return tonumber(string.match(output, "Pages:%s+(%d+)"))
+end
+
+local function near(label, actual, expected, tolerance)
+  if actual == nil or math.abs(actual - expected) > tolerance then
+    print(label .. ": got " .. tostring(actual) .. ", expected " .. tostring(expected))
+    return false
+  end
+  return true
+end
+
+local function equal(label, actual, expected)
+  if actual ~= expected then
+    print(label .. ": got " .. tostring(actual) .. ", expected " .. tostring(expected))
+    return false
+  end
+  return true
+end
+
+-- A PDF of exactly the given size in pt, standing in for a drawn figure.
+local function make_fixture(directory, name, width, height)
+  lfs.mkdir(directory)
+  local source = "\\documentclass{article}\n"
+    .. "\\usepackage[paperwidth=" .. width .. "pt,paperheight=" .. height .. "pt,margin=0pt]{geometry}\n"
+    .. "\\pagestyle{empty}\n\\begin{document}\n\\null\n\\end{document}\n"
+  local path = directory .. "/" .. name .. ".tex"
+  local handle = io.open(path, "w")
+  handle:write(source)
+  handle:close()
+  return harness.run("fixture " .. name,
+    "pdflatex -halt-on-error -interaction=nonstopmode -output-directory=" .. harness.quote(directory)
+      .. " " .. harness.quote(path) .. " > /dev/null")
+end
+
+local function make_fixtures(document, file)
+  for name, figure in pairs(file.figures) do
+    if make_fixture(document.figures, name, figure.width, figure.height) ~= 0 then
       return 1
     end
   end
   return 0
 end
 
--- Reads a binary PPM image as written by pdftoppm.
-local function read_ppm(path)
-  local handle = io.open(path, "rb")
-  if not handle then
+-- Compiles a document without figures, which must warn for each, then with
+-- fixtures of the sizes it asked for, which must compile clean with the same
+-- number of pages.
+local function compile_document(document)
+  if harness.run("clear fixtures", "rm -rf " .. harness.quote(document.figures)) ~= 0 then
     return nil
   end
-  local data = handle:read("*a")
-  handle:close()
-  local width, height, offset = string.match(data, "^P6%s+(%d+)%s+(%d+)%s+%d+%s()")
-  return { width = tonumber(width), height = tonumber(height), data = data, offset = offset }
-end
-
-local function pixel(image, x, y)
-  local index = image.offset + 3 * (y * image.width + x)
-  return { string.byte(image.data, index, index + 2) }
-end
-
--- The two panels of surface-shading-check are constant shaded surfaces at
--- plasma(0.2) and plasma(0.8), as matplotlib computes them.
-local function shading_checks()
-  local pdf = harness.output("surface-shading-check", "lualatex", "pdf")
-  if harness.run("render surface-shading-check",
-    "pdftoppm -r 72 " .. harness.quote(pdf) .. " build/surface-shading-check") ~= 0 then
-    return 1
+  if harness.compile_test(environment, document.name, document.engine) ~= 0 then
+    return nil
   end
-
-  local image = read_ppm("build/surface-shading-check-1.ppm")
-  if not image then
-    print("build/surface-shading-check-1.ppm: missing")
-    return 1
+  local log_path = harness.output(document.name, document.engine, "log")
+  local pdf = harness.output(document.name, document.engine, "pdf")
+  local file = parse_figmint(harness.output(document.name, document.engine, "figmint"))
+  if not file then
+    return nil
   end
-
-  local panels = {
-    { image.width // 4, { 106, 0, 168 } },
-    { 3 * image.width // 4, { 252, 166, 54 } },
-  }
-  for _, panel in ipairs(panels) do
-    local color = pixel(image, panel[1], image.height // 2)
-    for channel = 1, 3 do
-      if math.abs(color[channel] - panel[2][channel]) > 3 then
-        print("surface-shading-check: panel at x=" .. panel[1] .. " has color "
-          .. table.concat(color, ",") .. ", expected " .. table.concat(panel[2], ","))
-        return 1
-      end
+  local without = pages(pdf)
+  for name in pairs(file.figures) do
+    if not harness.file_contains(log_path, "Package figmint Warning: Figure " .. name .. " is not drawn yet") then
+      print(log_path .. ": missing the warning that " .. name .. " is not drawn yet")
+      return nil
     end
+  end
+  if make_fixtures(document, file) ~= 0 then
+    return nil
+  end
+  if harness.compile_test(environment, document.name, document.engine) ~= 0 then
+    return nil
+  end
+  if harness.file_contains(log_path, "Package figmint Warning") then
+    print(log_path .. ": a figmint warning with fixtures of the right size")
+    return nil
+  end
+  if not equal(document.name .. " pages with and without figures", pages(pdf), without) then
+    return nil
+  end
+  return file
+end
+
+local function check_header(document, file)
+  local content = table.concat(file.header, "\n")
+  local expected = {
+    "figmint=0.1.0",
+    "engine=" .. document.engine,
+    "directory=" .. document.figures .. "/",
+  }
+  for _, line in ipairs(expected) do
+    if count_in(content, line) ~= 1 then
+      print(document.name .. ": expected one line " .. line)
+      return false
+    end
+  end
+  return true
+end
+
+local function check_preamble_lines(document, file, lines)
+  local content = table.concat(file.header, "\n")
+  for _, line in ipairs(lines) do
+    if count_in(content, "preamble=" .. line) ~= 1 then
+      print(document.name .. ": expected one preamble line " .. line)
+      return false
+    end
+  end
+  return true
+end
+
+local function check_caption(document, figure, name, size, script, scriptscript, family)
+  local label = document.name .. " " .. name
+  return near(label .. " size", figure.size, size, 0.001)
+    and near(label .. " script", figure.script, script, 0.001)
+    and near(label .. " scriptscript", figure.scriptscript, scriptscript, 0.001)
+    and equal(label .. " family", figure.family, family)
+    and equal(label .. " series", figure.series, "m")
+    and equal(label .. " shape", figure.shape, "n")
+end
+
+local function check_article(document, file)
+  local widths = linewidths(harness.output(document.name, document.engine, "log"))
+  local first, second = file.figures.first, file.figures.second
+  if not (first and second) then
+    print("article-check: missing a figure line")
+    return false
+  end
+  return check_header(document, file)
+    and check_preamble_lines(document, file, {
+      "\\usepackage[OT1]{fontenc}",
+      "\\renewcommand{\\rmdefault}{ptm}",
+      "\\usepackage {amsmath}",
+    })
+    and near("article first width", first.width, widths.article, 0.001)
+    and near("article first height", first.height, 0.6180339887498948 * widths.article, 0.001)
+    and near("article second width", second.width, 0.5 * widths.article, 0.001)
+    and near("article second height", second.height, 0.5 * 0.5 * widths.article, 0.001)
+    and equal("article second count", second.count, 1)
+    and check_caption(document, first, "first", 10, 7, 5, "serif")
+    and check_caption(document, second, "second", 10, 7, 5, "serif")
+end
+
+local function check_subcaption(document, file)
+  local widths = linewidths(harness.output(document.name, document.engine, "log"))
+  local sub, main = file.figures.sub, file.figures.main
+  if not (sub and main) then
+    print("subcaption-check: missing a figure line")
+    return false
+  end
+  return check_header(document, file)
+    and near("subfigure width", sub.width, widths.subfigure, 0.001)
+    and near("main width", main.width, widths.subcaption, 0.001)
+    and check_caption(document, sub, "sub", 8, 6, 5, "serif")
+    and check_caption(document, main, "main", 9, 6, 5, "serif")
+end
+
+local function check_deck(document, file)
+  local widths = linewidths(harness.output(document.name, document.engine, "log"))
+  local first, second = file.figures.first, file.figures.second
+  if not (first and second) then
+    print("deck-check: missing a figure line")
+    return false
+  end
+  return check_header(document, file)
+    and check_preamble_lines(document, file, { "\\usepackage {macromint}" })
+    and near("deck first width", first.width, widths.column, 0.001)
+    and near("deck first height", first.height, 0.5625 * widths.column, 0.001)
+    and near("deck second height", second.height, 0.5 * second.width, 0.001)
+    -- The frame has two slides; the figure without an overlay is written on both.
+    and equal("deck first count", first.count, 2)
+    and equal("deck second count", second.count, 1)
+    and check_caption(document, first, "first", 9, 6, 5, "sans-serif")
+    and check_caption(document, second, "second", 9, 6, 5, "sans-serif")
+end
+
+local checks = {
+  ["article-check"] = check_article,
+  ["subcaption-check"] = check_subcaption,
+  ["deck-check"] = check_deck,
+}
+
+-- A fixture of the wrong size gives a warning that prints both sizes, and
+-- the document still compiles.
+local function wrong_size_check()
+  local document = documents[1]
+  local file = parse_figmint(harness.output(document.name, document.engine, "figmint"))
+  local first = file.figures.first
+  if make_fixture(document.figures, "first", first.width + 10, first.height) ~= 0 then
+    return 1
+  end
+  if harness.compile_test(environment, document.name, document.engine) ~= 0 then
+    return 1
+  end
+  local log = read_file(harness.output(document.name, document.engine, "log"))
+  local pattern = "Package figmint Warning: Figure first is [%d.]+pt by [%d.]+pt, and the document asks for "
+    .. string.gsub(string.format("%.1f", first.width), "%.", "%%.") .. "pt by"
+  if not string.find(log, pattern) then
+    print(document.name .. ": missing the warning with both sizes")
+    return 1
   end
   return 0
 end
 
 local function check()
-  for _, test in ipairs(tests) do
-    if harness.compile_test(environment, test, "lualatex") ~= 0 then
+  for _, engine in ipairs(engines) do
+    if harness.compile_test(environment, "catppuccin-check", engine) ~= 0 then
+      return 1
+    end
+    local log = harness.output("catppuccin-check", engine, "log")
+    for _, needle in ipairs(color_checks) do
+      if not harness.file_contains(log, needle) then
+        print(log .. ": missing " .. needle)
+        return 1
+      end
+    end
+    if harness.scan_log(log) ~= 0 then
       return 1
     end
   end
 
-  for _, engine in ipairs(engines) do
-    for _, test in ipairs(engine_neutral_tests) do
-      if harness.compile_test(environment, test, engine) ~= 0 then
-        return 1
-      end
-    end
-  end
-
-  if harness.compile_error_test(environment, "validation-error-check", "lualatex",
+  if harness.compile_error_test(environment, "validation-error-check", "pdflatex",
     "Package figmint Error: rows must be a positive integer") ~= 0 then
     return 1
   end
 
-  if output_checks() ~= 0 then
-    return 1
-  end
-
-  if shading_checks() ~= 0 then
-    return 1
-  end
-
-  for _, test in ipairs(tests) do
-    if harness.scan_log(harness.output(test, "lualatex", "log")) ~= 0 then
+  for _, document in ipairs(documents) do
+    local file = compile_document(document)
+    if not file then
+      return 1
+    end
+    if not checks[document.name](document, file) then
+      return 1
+    end
+    if harness.scan_log(harness.output(document.name, document.engine, "log")) ~= 0 then
       return 1
     end
   end
 
-  for _, engine in ipairs(engines) do
-    for _, test in ipairs(engine_neutral_tests) do
-      if harness.scan_log(harness.output(test, engine, "log")) ~= 0 then
-        return 1
-      end
-    end
-  end
-
-  return 0
+  return wrong_size_check()
 end
 
 target_list.check.func = check

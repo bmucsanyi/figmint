@@ -1,0 +1,19 @@
+\documentclass{article}
+\usepackage[font=small]{caption}
+\usepackage[font=footnotesize]{subcaption}
+\usepackage{figmint}
+
+\begin{document}
+
+Body text with math $f(x) = x_{i}^{2}$ and $-1$.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{subfigure}{0.45\linewidth}
+    \figmintgraphic{lines}
+    \caption{Subcaption $x_{i}$ and $-1$.}
+  \end{subfigure}
+  \caption{Caption $x_{i}$ and $-1$.}
+\end{figure}
+
+\end{document}

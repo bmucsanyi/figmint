@@ -5,19 +5,38 @@ from collections.abc import Callable
 from itertools import combinations
 from math import atan2, cos, degrees, exp, radians, sin, sqrt
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any
 
-import matplotlib.pyplot as plt
+import matplotlib as mpl
 import pytest
-from matplotlib import font_manager
+from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.colors import to_hex, to_rgb
+from matplotlib.figure import Figure
 
-import figmint
-from figmint import export_table, legend, register_fonts, style
-from figmint._colors import (
-    CATPPUCCIN_THEMES,
-    COLOR_THEMES,
-    REPAIRED_LATTE_CYCLE,
+from figmint import style
+from figmint._colors import COLOR_THEMES, NORMAL_CYCLE, Theme
+from figmint._style import look
+
+STY = Path(__file__).resolve().parents[1] / "tex" / "latex" / "figmint" / "figmint.sty"
+FIGURE_SIZE = (3.25, 2.0)
+PREFIXES = {
+    "normal": "FigmintNormal",
+    "latte": "FigmintLatte",
+    "frappe": "FigmintFrappe",
+    "macchiato": "FigmintMacchiato",
+    "mocha": "FigmintMocha",
+}
+CYCLE_NAMES = (
+    "One",
+    "Two",
+    "Three",
+    "Four",
+    "Five",
+    "Six",
+    "Seven",
+    "Eight",
+    "Nine",
+    "Ten",
 )
 
 
@@ -25,16 +44,8 @@ def value(config: dict[str, object], key: str) -> Any:
     return config[key]
 
 
-def style_with_backend(backend: Any) -> dict[str, object]:
-    return style("normal", venue="icml", backend=backend)
-
-
-def style_with_tex_compiler(tex_compiler: Any) -> dict[str, object]:
-    return style("normal", venue="icml", backend="pgf", tex_compiler=tex_compiler)
-
-
-def style_with_math_font(math_font: Any) -> dict[str, object]:
-    return style("normal", venue="icml", backend="pgf", math_font=math_font)
+def normal_style() -> dict[str, object]:
+    return style("normal", figure_size=FIGURE_SIZE, font_size=9.0)
 
 
 def linearized_rgb_channel(value: float) -> float:
@@ -351,91 +362,97 @@ CVD_MATRICES = {
 }
 
 
-def test_public_api_exposes_style_and_font_registration() -> None:
-    assert figmint.__all__ == [
-        "export_heatmap",
-        "export_table",
-        "legend",
-        "provenance",
-        "register_fonts",
-        "savefig",
-        "style",
-    ]
-    assert figmint.export_table is export_table
-    assert figmint.legend is legend
-    assert not hasattr(figmint, "paper")
-    assert not hasattr(figmint, "slides")
+def sty_colors() -> dict[str, str]:
+    r"""Read every named color of figmint.sty as a hex value, following \colorlet.
 
-
-def test_color_tables_only_contain_style_roles() -> None:
-    assert set(CATPPUCCIN_THEMES) == {"latte", "frappe", "macchiato", "mocha"}
-    assert next(iter(COLOR_THEMES)) == "normal"
-    assert set(COLOR_THEMES) == {
-        "normal",
-        "latte",
-        "frappe",
-        "macchiato",
-        "mocha",
+    Returns:
+        The colors by name.
+    """
+    source = STY.read_text(encoding="utf-8")
+    colors = {
+        name: "#" + hex_value.lower()
+        for name, hex_value in re.findall(
+            r"\\definecolor\{(\w+)\}\{HTML\}\{([0-9a-fA-F]{6})\}", source
+        )
     }
 
+    for name, other in re.findall(r"\\colorlet\{(\w+)\}\{(\w+)\}", source):
+        colors[name] = colors[other]
+
+    return colors
+
+
+@pytest.mark.parametrize("theme", list(COLOR_THEMES))
+def test_theme_colors_agree_with_figmint_sty(theme: Theme) -> None:
+    colors = sty_colors()
+    prefix = PREFIXES[theme]
+    expected = COLOR_THEMES[theme]
+
+    assert colors[prefix + "Background"] == expected["background"]
+    assert colors[prefix + "Text"] == expected["text"]
+    assert colors[prefix + "Edge"] == expected["edge"]
+    assert colors[prefix + "Grid"] == expected["grid"]
+    assert (
+        tuple(colors[prefix + "Cycle" + name] for name in CYCLE_NAMES)
+        == expected["cycle"]
+    )
+
+
+def test_color_tables_hold_the_five_themes_with_their_roles() -> None:
+    assert list(COLOR_THEMES) == ["normal", "latte", "frappe", "macchiato", "mocha"]
+
     for theme in COLOR_THEMES.values():
-        assert set(theme) == {"background", "text", "edge", "cycle"}
+        assert set(theme) == {"background", "text", "edge", "grid", "cycle"}
+        assert len(theme["cycle"]) == 10
 
 
-def test_default_theme_is_publication_style() -> None:
-    config = style(venue="icml", column="half")
+def test_normal_style_is_the_look_on_white() -> None:
+    config = normal_style()
 
-    assert "backend" not in config
-    assert "pgf.texsystem" not in config
-    assert "pgf.preamble" not in config
-    assert "pgf.rcfonts" not in config
-    assert "mathtext.fontset" not in config
+    assert value(config, "figure.figsize") == FIGURE_SIZE
+    assert value(config, "text.usetex") is False
     assert value(config, "figure.facecolor") == "#ffffff"
     assert value(config, "axes.facecolor") == "#ffffff"
     assert value(config, "savefig.facecolor") == "#ffffff"
     assert value(config, "text.color") == "#000000"
-    assert value(config, "axes.labelcolor") == "#000000"
-    assert value(config, "xtick.color") == "#000000"
-    assert value(config, "ytick.color") == "#000000"
-    assert value(config, "xtick.labelcolor") == "#000000"
-    assert value(config, "ytick.labelcolor") == "#000000"
     assert value(config, "axes.edgecolor") == "#000000"
     assert value(config, "grid.color") == "#9ca0b0"
-    assert value(config, "legend.edgecolor") == "none"
-    assert value(config, "patch.edgecolor") == "#000000"
-    assert value(config, "image.cmap") == "plasma"
-    assert value(config, "axes.grid") is True
     assert value(config, "grid.alpha") == pytest.approx(0.16)
-    assert value(config, "legend.frameon") is True
-    assert value(config, "axes.spines.left") is True
-    assert value(config, "axes.spines.bottom") is True
+    assert value(config, "axes.grid") is True
+    assert value(config, "axes.grid.axis") == "y"
+    assert value(config, "axes.xmargin") == pytest.approx(0.05)
+    assert value(config, "axes.ymargin") == pytest.approx(0.05)
+    assert value(config, "figure.constrained_layout.use") is True
+    assert value(config, "figure.constrained_layout.w_pad") == pytest.approx(3.0 / 72.0)
+    assert value(config, "figure.constrained_layout.h_pad") == pytest.approx(3.0 / 72.0)
+    assert value(config, "legend.edgecolor") == "none"
+    assert value(config, "image.cmap") == "plasma"
     assert value(config, "axes.spines.top") is False
     assert value(config, "axes.spines.right") is False
+    assert value(config, "axes.linewidth") == pytest.approx(0.5)
+    assert value(config, "lines.linewidth") == pytest.approx(1.0)
     assert value(config, "lines.markersize") == pytest.approx(3.0)
-    assert value(config, "lines.markeredgewidth") == pytest.approx(0.5)
-    assert value(config, "axes.prop_cycle").by_key()["color"] == list(
-        REPAIRED_LATTE_CYCLE,
-    )
-    assert value(config, "font.size") == pytest.approx(9.0)
-    assert value(config, "axes.labelsize") == pytest.approx(9.0)
-    assert value(config, "axes.titlesize") == pytest.approx(9.0)
-    assert value(config, "legend.fontsize") == pytest.approx(9.0)
+    assert value(config, "axes.prop_cycle").by_key()["color"] == list(NORMAL_CYCLE)
+
+    for key in ("font.size", "axes.labelsize", "axes.titlesize", "legend.fontsize"):
+        assert value(config, key) == pytest.approx(9.0)
+
     assert value(config, "xtick.labelsize") == pytest.approx(9.0)
     assert value(config, "ytick.labelsize") == pytest.approx(9.0)
     assert value(config, "pdf.fonttype") == 42
-    assert value(config, "ps.fonttype") == 42
-    assert value(config, "svg.fonttype") == "none"
+    assert value(config, "savefig.dpi") == 600
 
 
 def test_saved_pdf_embeds_images_at_600_dpi(tmp_path: Path) -> None:
     path = tmp_path / "image.pdf"
 
-    with plt.rc_context(style("normal", venue="icml")):
-        figure = plt.figure(figsize=(2.0, 2.0), layout="none")
+    with mpl.rc_context(normal_style()):
+        figure = Figure(figsize=(2.0, 2.0))
+        figure.set_layout_engine("none")
+        FigureCanvasAgg(figure)
         axis = figure.add_axes((0.25, 0.25, 0.5, 0.5))
         axis.imshow([[0.0, 1.0], [1.0, 0.0]], aspect="auto")
         figure.savefig(path)
-        plt.close(figure)
 
     size = re.search(rb"/Subtype /Image /Width (\d+) /Height (\d+)", path.read_bytes())
 
@@ -443,471 +460,118 @@ def test_saved_pdf_embeds_images_at_600_dpi(tmp_path: Path) -> None:
     assert (int(size[1]), int(size[2])) == (600, 600)
 
 
-@pytest.mark.parametrize(
-    ("theme", "background", "text", "edge"),
-    [
-        ("latte", "#eff1f5", "#4c4f69", "#9ca0b0"),
-        ("frappe", "#303446", "#c6d0f5", "#737994"),
-        ("macchiato", "#24273a", "#cad3f5", "#6e738d"),
-        ("mocha", "#1e1e2e", "#cdd6f4", "#6c7086"),
-    ],
-)
-def test_theme_backgrounds_and_text(
-    theme: str,
-    background: str,
-    text: str,
-    edge: str,
-) -> None:
-    config = style(theme, venue="icml")
-
-    assert value(config, "figure.facecolor") == background
-    assert value(config, "axes.facecolor") == background
-    assert value(config, "savefig.facecolor") == background
-    assert value(config, "figure.edgecolor") == background
-    assert value(config, "savefig.edgecolor") == background
-    assert value(config, "text.color") == text
-    assert value(config, "axes.edgecolor") == edge
-    assert value(config, "xtick.color") == edge
-    assert value(config, "ytick.color") == edge
-    assert value(config, "xtick.labelcolor") == text
-    assert value(config, "ytick.labelcolor") == text
-    assert value(config, "grid.color") == edge
-    assert value(config, "axes.grid") is True
-    assert value(config, "legend.edgecolor") == "none"
-    assert value(config, "legend.framealpha") == pytest.approx(1.0)
-    assert value(config, "legend.frameon") is True
-    assert value(config, "axes.spines.left") is True
-    assert value(config, "axes.spines.bottom") is True
-    assert value(config, "axes.spines.top") is False
-    assert value(config, "axes.spines.right") is False
-    assert value(config, "patch.edgecolor") == edge
-    assert value(config, "image.cmap") == "plasma"
-    assert value(config, "savefig.transparent") is False
-
-
 @pytest.mark.parametrize("theme", ["latte", "frappe", "macchiato", "mocha"])
-def test_color_cycles_are_exact(theme: str) -> None:
-    assert (
-        value(style(theme, venue="icml"), "axes.prop_cycle").by_key()["color"]
-        == CATPPUCCIN_CYCLES[theme]
-    )
+def test_themes_set_their_colors(theme: Theme) -> None:
+    config = style(theme, figure_size=FIGURE_SIZE, font_size=9.0)
+    colors = COLOR_THEMES[theme]
 
+    for key in (
+        "figure.facecolor",
+        "axes.facecolor",
+        "savefig.facecolor",
+        "legend.facecolor",
+    ):
+        assert value(config, key) == colors["background"]
 
-def test_normal_color_cycle_is_repaired_latte_cycle() -> None:
-    assert value(style("normal", venue="icml"), "axes.prop_cycle").by_key()[
-        "color"
-    ] == list(REPAIRED_LATTE_CYCLE)
+    for key in (
+        "text.color",
+        "axes.labelcolor",
+        "xtick.labelcolor",
+        "ytick.labelcolor",
+    ):
+        assert value(config, key) == colors["text"]
+
+    for key in ("axes.edgecolor", "xtick.color", "ytick.color", "patch.edgecolor"):
+        assert value(config, key) == colors["edge"]
+
+    assert value(config, "grid.color") == colors["grid"]
+    assert value(config, "axes.prop_cycle").by_key()["color"] == list(colors["cycle"])
 
 
 def test_repaired_latte_cycle_satisfies_normal_constraints() -> None:
-    assert colors_satisfy_normal_cycle_constraints(list(REPAIRED_LATTE_CYCLE))
+    assert colors_satisfy_normal_cycle_constraints(list(NORMAL_CYCLE))
 
 
 def test_repaired_latte_cycle_keeps_longest_feasible_latte_prefix() -> None:
     assert max_feasible_latte_prefix_length() == 1
-    assert count_unchanged_latte_prefix(REPAIRED_LATTE_CYCLE) == 1
-    assert REPAIRED_LATTE_CYCLE[0] == CATPPUCCIN_CYCLES["latte"][0]
-    assert REPAIRED_LATTE_CYCLE[1] != CATPPUCCIN_CYCLES["latte"][1]
+    assert count_unchanged_latte_prefix(NORMAL_CYCLE) == 1
+    assert NORMAL_CYCLE[0] == CATPPUCCIN_CYCLES["latte"][0]
+    assert NORMAL_CYCLE[1] != CATPPUCCIN_CYCLES["latte"][1]
 
 
-def test_normal_grid_matches_latte_grid() -> None:
-    normal = style("normal", venue="icml")
-    latte = style("latte", venue="icml")
-
-    assert value(normal, "axes.grid") == value(latte, "axes.grid")
-    assert value(normal, "grid.color") == value(latte, "grid.color")
-    assert value(normal, "grid.alpha") == value(latte, "grid.alpha")
-    assert value(normal, "grid.linestyle") == value(latte, "grid.linestyle")
-
-
-@pytest.mark.parametrize("theme", ["normal", "latte", "frappe", "macchiato", "mocha"])
-@pytest.mark.parametrize("venue", ["iclr", "neurips", "icml"])
-def test_style_updates_matplotlib_rcparams(theme: str, venue: str) -> None:
-    config = style(theme, venue=venue, column="full")
-
-    with plt.rc_context(config):
-        pass
-
-
-def test_pgf_backend_sets_pgf_rcparams() -> None:
-    config = style("normal", venue="icml", backend="pgf")
-
-    assert value(config, "backend") == "pgf"
-    assert value(config, "pgf.texsystem") == "pdflatex"
-    assert value(config, "pgf.preamble") == r"\usepackage{times}"
-    assert value(config, "pgf.rcfonts") is False
-    assert value(config, "text.usetex") is False
-    assert value(config, "font.family") == "serif"
-
-
-def test_pgf_backend_accepts_tex_compiler_and_preamble() -> None:
-    config = style(
-        "normal",
-        venue="icml",
-        backend="pgf",
-        tex_compiler="lualatex",
-        pgf_preamble=r"\usepackage{amsmath}",
-    )
-
-    assert value(config, "backend") == "pgf"
-    assert value(config, "pgf.texsystem") == "lualatex"
-    assert value(config, "pgf.preamble") == r"\usepackage{amsmath}"
-    assert value(config, "pgf.rcfonts") is False
-
-
-@pytest.mark.parametrize(
-    ("venue", "expected_preamble"),
-    [
-        ("iclr", r"\usepackage{times}"),
-        ("icml", r"\usepackage{times}"),
-        (
-            "neurips",
-            (
-                r"\renewcommand{\rmdefault}{ptm}"
-                "\n"
-                r"\renewcommand{\sfdefault}{phv}"
-            ),
-        ),
-    ],
-)
-def test_pgf_backend_uses_venue_text_setup(
-    venue: str,
-    expected_preamble: str,
-) -> None:
-    config = style("normal", venue=venue, backend="pgf")
-
-    assert value(config, "pgf.preamble") == expected_preamble
-    assert value(config, "pgf.rcfonts") is False
-
-
-def test_pgf_backend_uses_custom_text_font_with_unicode_compiler() -> None:
-    config = style(
-        "normal",
-        venue="icml",
-        backend="pgf",
-        tex_compiler="lualatex",
-        text_font="Roboto Condensed",
-    )
-
-    assert value(config, "pgf.preamble") == (
-        r"\usepackage{fontspec}"
-        "\n"
-        r"\setmainfont{Roboto Condensed}"
-    )
-    assert value(config, "pgf.rcfonts") is False
-
-
-@pytest.mark.parametrize(
-    ("tex_compiler", "expected_math_setup"),
-    [
-        ("pdflatex", r"\usepackage[notext]{stix2}"),
-        (
-            "xelatex",
-            (
-                r"\usepackage{unicode-math}"
-                "\n"
-                r"\setmathfont{STIX Two Math}"
-            ),
-        ),
-        (
-            "lualatex",
-            (
-                r"\usepackage{unicode-math}"
-                "\n"
-                r"\setmathfont{STIX Two Math}"
-            ),
-        ),
-    ],
-)
-def test_pgf_backend_builds_stix_math_preamble(
-    tex_compiler: Literal["pdflatex", "xelatex", "lualatex"],
-    expected_math_setup: str,
-) -> None:
-    config = style(
-        "normal",
-        venue="icml",
-        backend="pgf",
-        tex_compiler=tex_compiler,
-        math_font="stix",
-    )
-
-    assert value(config, "pgf.preamble") == (
-        rf"\usepackage{{times}}"
-        f"\n{expected_math_setup}"
-    )
-
-
-def test_native_backend_uses_stix_mathtext_when_requested() -> None:
-    config = style("normal", venue="icml", math_font="stix")
-
-    assert value(config, "mathtext.fontset") == "stix"
+@pytest.mark.parametrize("theme", ["latte", "frappe", "macchiato", "mocha"])
+def test_catppuccin_cycles_are_the_official_values(theme: Theme) -> None:
+    assert list(COLOR_THEMES[theme]["cycle"]) == CATPPUCCIN_CYCLES[theme]
 
 
 @pytest.mark.parametrize(
     ("theme", "background"),
-    [
-        ("frappe", "#303446"),
-        ("macchiato", "#24273a"),
-        ("mocha", "#1e1e2e"),
-    ],
+    [("frappe", "#303446"), ("macchiato", "#24273a"), ("mocha", "#1e1e2e")],
 )
 def test_dark_figures_render_with_theme_background(
-    theme: str,
-    background: str,
+    theme: Theme, background: str
 ) -> None:
-    with plt.rc_context(style(theme, venue="icml")):
-        figure, axis = plt.subplots()
+    with mpl.rc_context(style(theme, figure_size=FIGURE_SIZE, font_size=9.0)):
+        figure = Figure()
+        FigureCanvasAgg(figure)
+        axis = figure.subplots()
 
         assert to_hex(figure.get_facecolor()) == background
         assert to_hex(axis.get_facecolor()) == background
 
-        plt.close(figure)
 
-
-@pytest.mark.parametrize(
-    ("call", "message"),
-    [
-        (lambda: style("old", venue="icml"), "Unknown theme"),
-        (lambda: style("Latte", venue="icml"), "Unknown theme"),
-        (lambda: style("normal", venue="unknown"), "Unknown venue"),
-        (lambda: style("normal", venue="ICML"), "Unknown venue"),
-        (lambda: style("normal", venue="iclr", column="half"), "styles require"),
-        (lambda: style_with_backend("unknown"), "Unknown backend"),
-        (lambda: style_with_tex_compiler("latex"), "Unknown tex_compiler"),
-        (lambda: style_with_math_font("cambria"), "Unknown math_font"),
-        (
-            lambda: style(
-                "normal",
-                venue="icml",
-                backend="matplotlib",
-                tex_compiler="lualatex",
-            ),
-            "tex_compiler requires",
-        ),
-        (
-            lambda: style(
-                "normal",
-                venue="icml",
-                backend="matplotlib",
-                pgf_preamble=r"\usepackage{amsmath}",
-            ),
-            "pgf_preamble requires",
-        ),
-        (
-            lambda: style(
-                "normal",
-                venue="icml",
-                backend="pgf",
-                pgf_preamble=r"\usepackage{times}",
-                text_font="Roboto Condensed",
-            ),
-            "text_font requires",
-        ),
-        (
-            lambda: style(
-                "normal",
-                venue="icml",
-                backend="pgf",
-                pgf_preamble=r"\usepackage{times}",
-                math_font="stix",
-            ),
-            "math_font requires",
-        ),
-        (
-            lambda: style(
-                "normal",
-                venue="icml",
-                backend="pgf",
-                text_font="Roboto Condensed",
-            ),
-            "text_font requires tex_compiler",
-        ),
-    ],
-)
-def test_unsupported_styles_fail_loudly(
-    call: Callable[[], None],
-    message: str,
-) -> None:
-    with pytest.raises(ValueError, match=message):
-        call()
-
-
-def test_venue_layout_defaults_match_publication_layout() -> None:
+def test_explicit_line_width_and_grid_alpha_are_applied() -> None:
     config = style(
-        "normal",
-        venue="icml",
-        column="full",
-        width_fraction=0.5,
-        rows=2,
-        cols=3,
-        height_to_width_ratio=0.75,
+        "frappe", figure_size=(7.0, 3.5), font_size=13.0, line_width=0.8, grid_alpha=0.4
     )
 
-    figure_size = value(config, "figure.figsize")
-
-    assert figure_size[0] == pytest.approx(3.375)
-    assert figure_size[1] == pytest.approx(1.6875)
-
-
-@pytest.mark.parametrize(
-    (
-        "venue",
-        "column",
-        "expected_width",
-        "expected_caption_font_size",
-    ),
-    [
-        ("icml", "half", 3.25, 9.0),
-        ("icml", "full", 6.75, 9.0),
-        ("iclr", "full", 5.5, 10.0),
-        ("neurips", "full", 5.5, 10.0),
-    ],
-)
-def test_conference_presets_use_caption_font_size(
-    venue: str,
-    column: str,
-    expected_width: float,
-    expected_caption_font_size: float,
-) -> None:
-    golden_ratio = (5.0**0.5 - 1.0) / 2.0
-    config = style("normal", venue=venue, column=column)
-
-    figure_size = value(config, "figure.figsize")
-
-    assert value(config, "font.size") == expected_caption_font_size
-    assert value(config, "font.family") == "Times New Roman"
-    assert value(config, "axes.labelsize") == pytest.approx(expected_caption_font_size)
-    assert value(config, "axes.titlesize") == pytest.approx(expected_caption_font_size)
-    assert value(config, "legend.fontsize") == pytest.approx(expected_caption_font_size)
-    assert value(config, "xtick.labelsize") == pytest.approx(expected_caption_font_size)
-    assert value(config, "ytick.labelsize") == pytest.approx(expected_caption_font_size)
-    assert figure_size[0] == expected_width
-    assert figure_size[1] == pytest.approx(expected_width * golden_ratio)
-
-
-def test_explicit_overrides_are_applied() -> None:
-    config = style(
-        "frappe",
-        venue="icml",
-        column="half",
-        text_font="Roboto Condensed",
-        font_weight="light",
-        font_size=13.0,
-        figure_size=(7.0, 3.5),
-        line_width=0.8,
-        grid_alpha=0.4,
-    )
-
-    assert value(config, "text.usetex") is False
-    assert value(config, "font.family") == "Roboto Condensed"
-    assert value(config, "font.weight") == "light"
-    assert value(config, "axes.labelweight") == "light"
     assert value(config, "font.size") == pytest.approx(13.0)
-    assert value(config, "legend.fontsize") == pytest.approx(13.0)
-    assert value(config, "xtick.labelsize") == pytest.approx(13.0)
-    assert value(config, "ytick.labelsize") == pytest.approx(13.0)
     assert value(config, "figure.figsize") == (7.0, 3.5)
     assert value(config, "axes.linewidth") == pytest.approx(0.8)
+    assert value(config, "lines.linewidth") == pytest.approx(1.6)
     assert value(config, "lines.markeredgewidth") == pytest.approx(0.8)
+    assert value(config, "xtick.major.size") == pytest.approx(3.0)
     assert value(config, "grid.alpha") == pytest.approx(0.4)
     assert value(config, "figure.facecolor") == "#303446"
 
 
 @pytest.mark.parametrize(
-    ("call", "expected_exception", "message"),
+    ("call", "message"),
     [
+        (lambda: look("old"), "Unknown theme"),
         (
-            lambda: style("normal", venue="icml", width_fraction=0.0),
-            ValueError,
-            "width_fraction",
+            lambda: look("Latte"),
+            "Unknown theme",
         ),
-        (lambda: style("normal", venue="icml", rows=0), ValueError, "rows"),
-        (lambda: style("normal", venue="icml", cols=0), ValueError, "cols"),
-        (lambda: style("normal", venue="icml", font_size=0.0), ValueError, "font_size"),
         (
-            lambda: style("normal", venue="icml", figure_size=(0.0, 2.0)),
-            ValueError,
+            lambda: style("normal", figure_size=(0.0, 2.0), font_size=9.0),
             "figure_size width",
         ),
         (
-            lambda: style("normal", venue="icml", figure_size=(4.0, -1.0)),
-            ValueError,
+            lambda: style("normal", figure_size=(4.0, -1.0), font_size=9.0),
             "figure_size height",
         ),
+        (lambda: style("normal", figure_size=FIGURE_SIZE, font_size=0.0), "font_size"),
         (
-            lambda: style("normal", venue="icml", height_to_width_ratio=0.0),
-            ValueError,
-            "height_to_width_ratio",
-        ),
-        (
-            lambda: style("normal", venue="icml", line_width=0.0),
-            ValueError,
+            lambda: style(
+                "normal", figure_size=FIGURE_SIZE, font_size=9.0, line_width=0.0
+            ),
             "line_width",
         ),
         (
-            lambda: style("normal", venue="icml", grid_alpha=-0.1),
-            ValueError,
+            lambda: style(
+                "normal", figure_size=FIGURE_SIZE, font_size=9.0, grid_alpha=-0.1
+            ),
             "grid_alpha",
         ),
         (
-            lambda: style("normal", venue="icml", grid_alpha=1.1),
-            ValueError,
+            lambda: style(
+                "normal", figure_size=FIGURE_SIZE, font_size=9.0, grid_alpha=1.1
+            ),
             "grid_alpha",
         ),
     ],
 )
-def test_invalid_numeric_style_inputs_fail_loudly(
-    call: Callable[[], None],
-    expected_exception: type[Exception],
-    message: str,
-) -> None:
-    with pytest.raises(expected_exception, match=message):
+def test_invalid_inputs_fail_loudly(call: Callable[[], object], message: str) -> None:
+    with pytest.raises(ValueError, match=message):
         call()
-
-
-def test_explicit_figure_size_does_not_require_column_preset() -> None:
-    config = style(
-        "normal",
-        venue="iclr",
-        column="half",
-        figure_size=(4.0, 2.0),
-    )
-
-    assert value(config, "figure.figsize") == (4.0, 2.0)
-    assert value(config, "font.size") == pytest.approx(10.0)
-
-
-def test_register_fonts_adds_font_files() -> None:
-    font_file = font_manager.findfont("DejaVu Sans", fallback_to_default=False)
-    register_fonts(font_file)
-    config = style(
-        "normal",
-        venue="icml",
-        text_font="DejaVu Sans",
-        font_weight="light",
-    )
-
-    assert value(config, "font.family") == "DejaVu Sans"
-    assert value(config, "font.weight") == "light"
-
-    with plt.rc_context(config):
-        resolved_font = font_manager.findfont(
-            font_manager.FontProperties(family="DejaVu Sans", weight="light"),
-            fallback_to_default=False,
-        )
-
-    assert resolved_font == font_file
-
-
-def test_missing_font_file_fails_loudly() -> None:
-    with pytest.raises(FileNotFoundError, match="Font file does not exist"):
-        register_fonts("missing-font-file.ttf")
-
-
-def call_with_unsupported_usetex(call: Callable[..., object]) -> None:
-    call("normal", venue="icml", usetex=True)
-
-
-def test_usetex_is_unsupported() -> None:
-    with pytest.raises(TypeError, match="unexpected keyword argument 'usetex'"):
-        call_with_unsupported_usetex(style)

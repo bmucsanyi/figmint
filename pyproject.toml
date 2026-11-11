@@ -7,7 +7,7 @@
 name = "figmint"
 authors = [{ name = "Bálint Mucsányi" }]
 urls = { Repository = "https://github.com/bmucsanyi/figmint" }
-description = "Opinionated matplotlib defaults for academic figures"
+description = "Figures drawn with matplotlib to what the document asks for"
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Information Technology",
@@ -20,7 +20,7 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Operating System :: OS Independent",
 ]
-dependencies = ["matplotlib", "numpy", "pillow"]
+dependencies = ["matplotlib", "numpy", "pdfminer.six", "pillow"]
 version = "0.1.0"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -51,7 +51,6 @@ testpaths = ["tests"]
 
 [tool.ruff]
 preview = true
-extend-include = ["*.ipynb"]
 exclude = [".git", "__pycache__"]
 target-version = "py312"
 
@@ -138,7 +137,6 @@ ignore = [
     "ANN401",
     # __init__ docstrings usually repeat the class docstring
     "D107",
-    # In-place assignments are not always possible in torch or jax
     "PLR6104",
     # Assignments before return can emphasize the code's semantic structure
     "RET504",
@@ -146,7 +144,7 @@ ignore = [
 
 [tool.ruff.lint.extend-per-file-ignores]
 "tests/*.py" = [
-    "PLC2701", # Tests monkeypatch private scheduling helpers
+    "PLC2701", # Tests import private helpers
     "S101",    # Use of assert is allowed in test files
     "INP001",  # The tests folder is not an implicit namespace package
     "D100",    # Docstrings are not required in tests
@@ -163,7 +161,6 @@ ignore = [
     "PLR0917",
     "SLF001",  # Tests may exercise internal helpers directly
 ]
-"*.ipynb" = ["T201"] # Print statements are fine in notebooks
 "scripts/*.py" = [
     "INP001",
 ] # The scripts folder is not an implicit namespace package

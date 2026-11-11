@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 from matplotlib.axes import Axes
+from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.colors import to_hex
 from matplotlib.figure import Figure
 from matplotlib.legend import Legend
@@ -23,6 +24,7 @@ from figmint._legend import (
     SCALE_UNIT,
     UNBOUNDED,
     _Anchor,
+    _axes_ink,
     _clearance,
     _Grid,
     _Ink,
@@ -34,6 +36,9 @@ from figmint._legend import (
 )
 
 FIXTURES = Path(__file__).parent / "fixtures" / "legend"
+# The figure the tests were written for: an ICML column at the golden ratio.
+FIGURE_SIZE = (6.75, 6.75 * (5.0**0.5 - 1.0) / 2.0)
+FONT_SIZE = 9.0
 CM_PER_INCH = 2.54
 PGF_ANCHORS = {
     1: "north east",
@@ -59,6 +64,10 @@ MATPLOTLIB_LOCS = {
     "north": "upper center",
     "center": "center",
 }
+
+
+def paper_style() -> dict[str, object]:
+    return style("normal", figure_size=FIGURE_SIZE, font_size=FONT_SIZE)
 
 
 def grid_from(occupied: np.ndarray) -> _Grid:
@@ -229,7 +238,7 @@ def read_series(case: str, series: str) -> tuple[list[float], list[float]]:
 def test_legend_matches_shared_fixture(
     case: dict[str, str], legend_columns: Callable[[Axes], int]
 ) -> None:
-    with plt.rc_context(style("normal", venue="icml")):
+    with plt.rc_context(paper_style()):
         figure = plt.figure(
             figsize=(10.0 / CM_PER_INCH, 7.0 / CM_PER_INCH), layout="none"
         )
@@ -273,7 +282,7 @@ def test_legend_matches_shared_fixture(
 def test_legend_sits_flush_at_a_fixed_anchor(
     loc: str, x_side: int, y_side: int
 ) -> None:
-    with plt.rc_context(style("normal", venue="icml")):
+    with plt.rc_context(paper_style()):
         figure, axis = unit_axes([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
         axis.plot([0.0, 1.0], [0.0, 1.0], label="baseline")
 
@@ -283,7 +292,7 @@ def test_legend_sits_flush_at_a_fixed_anchor(
 
 
 def test_legend_corner_survives_constrained_layout() -> None:
-    with plt.rc_context(style("normal", venue="icml")):
+    with plt.rc_context(paper_style()):
         figure, axes = plt.subplots(1, 2)
         axis = axes[0]
         axis.set_xlim(0.0, 4.0)
@@ -301,7 +310,7 @@ def test_legend_corner_survives_constrained_layout() -> None:
 
 
 def test_legend_keeps_spines_above_a_legend_without_edge() -> None:
-    with plt.rc_context(style("normal", venue="icml")):
+    with plt.rc_context(paper_style()):
         figure, axis = plt.subplots()
         axis.plot([0.0, 1.0], [0.0, 1.0], label="baseline")
 
@@ -316,7 +325,7 @@ def test_legend_keeps_spines_above_a_legend_without_edge() -> None:
 def test_legend_measures_candidates_with_the_given_options(
     legend_columns: Callable[[Axes], int],
 ) -> None:
-    with plt.rc_context(style("normal", venue="icml")):
+    with plt.rc_context(paper_style()):
         figure = plt.figure(figsize=(3.0, 2.0), layout="none")
         axis = figure.add_axes((0.25, 0.3, 1.25 / 3.0, 0.75 / 2.0))
         axis.plot([], [], label="a")
@@ -336,7 +345,7 @@ def test_legend_measures_candidates_with_the_given_options(
 
 
 def test_legend_keeps_the_given_options() -> None:
-    with plt.rc_context(style("normal", venue="icml")):
+    with plt.rc_context(paper_style()):
         figure, axis = plt.subplots()
         axis.plot([0.0, 1.0], [0.0, 1.0], label="baseline")
 
@@ -413,7 +422,7 @@ def test_legend_draws_once_for_any_entry_count(entry_count: int) -> None:
 
 
 def test_legend_snaps_explicit_position_to_nearest_grid_intersection() -> None:
-    with plt.rc_context(style("normal", venue="icml")):
+    with plt.rc_context(paper_style()):
         figure, axis = unit_axes([0.0, 0.25, 0.5, 0.75, 1.0])
         axis.plot([0.0, 1.0], [0.0, 0.1], label="baseline")
 
@@ -426,7 +435,7 @@ def test_legend_snaps_explicit_position_to_nearest_grid_intersection() -> None:
 
 @pytest.mark.parametrize("kind", ["image", "mesh"])
 def test_legend_treats_raster_content_as_ink(kind: str) -> None:
-    with plt.rc_context(style("normal", venue="icml")):
+    with plt.rc_context(paper_style()):
         figure, axis = plt.subplots(layout="none")
         values = np.arange(4.0).reshape(2, 2)
 
@@ -451,7 +460,7 @@ def test_legend_treats_raster_content_as_ink(kind: str) -> None:
 def test_legend_at_a_fixed_anchor_chooses_the_column_count(
     legend_columns: Callable[[Axes], int],
 ) -> None:
-    with plt.rc_context(style("normal", venue="icml")):
+    with plt.rc_context(paper_style()):
         figure, axis = unit_axes([0.0, 0.5, 1.0])
         xs = [float(index) / 100.0 for index in range(101)]
 
@@ -476,7 +485,7 @@ def test_legend_at_a_fixed_anchor_chooses_the_column_count(
 def test_legend_avoids_empty_legend_cells(
     legend_columns: Callable[[Axes], int],
 ) -> None:
-    with plt.rc_context(style("normal", venue="icml")):
+    with plt.rc_context(paper_style()):
         figure, axis = unit_axes([0.0, 0.5, 1.0])
         xs = [float(index) / 100.0 for index in range(101)]
 
@@ -498,7 +507,7 @@ def test_legend_avoids_empty_legend_cells(
 def test_legend_best_goes_to_the_free_corner(
     offset: float, slope: float, x_side: int, y_side: int
 ) -> None:
-    with plt.rc_context(style("normal", venue="icml")):
+    with plt.rc_context(paper_style()):
         figure, axis = unit_axes([0.0, 0.5, 1.0])
         xs = [float(index) / 100.0 for index in range(101)]
 
@@ -512,7 +521,7 @@ def test_legend_best_goes_to_the_free_corner(
 
 
 def test_legend_best_uses_local_clearance_when_global_margin_ties() -> None:
-    with plt.rc_context(style("normal", venue="icml")):
+    with plt.rc_context(paper_style()):
         figure, axes = plt.subplots(1, 2, figsize=(8.0, 4.0))
         xs = [float(index) / 100.0 for index in range(101)]
 
@@ -561,7 +570,7 @@ def test_legend_best_uses_local_clearance_when_global_margin_ties() -> None:
 def test_legend_best_prefers_local_clearance_before_growth_margin(
     legend_columns: Callable[[Axes], int],
 ) -> None:
-    with plt.rc_context(style("normal", venue="icml")):
+    with plt.rc_context(paper_style()):
         figure, axes = plt.subplots(2, 3, figsize=(12.0, 7.0), dpi=200.0)
         axis = axes[1, 0]
         xs = [float(index) / 179.0 for index in range(180)]
@@ -602,7 +611,7 @@ def test_legend_best_prefers_local_clearance_before_growth_margin(
 def test_legend_best_uses_display_clearance_for_center_gap(
     legend_columns: Callable[[Axes], int],
 ) -> None:
-    with plt.rc_context(style("normal", venue="icml")):
+    with plt.rc_context(paper_style()):
         figure, axis = plt.subplots(figsize=(12.0, 10.0), dpi=200.0)
         centers = ((0.20, 0.80), (0.80, 0.20), (0.80, 0.80), (0.20, 0.20))
         offsets = (-0.035, -0.015, 0.015, 0.035)
@@ -629,7 +638,7 @@ def test_legend_best_uses_display_clearance_for_center_gap(
 def test_legend_best_chooses_the_column_count(
     legend_columns: Callable[[Axes], int],
 ) -> None:
-    with plt.rc_context(style("normal", venue="icml")):
+    with plt.rc_context(paper_style()):
         figure, axis = plt.subplots()
 
         for index in range(4):
@@ -645,3 +654,32 @@ def test_legend_best_chooses_the_column_count(
         assert box.width > single_column_box.width
 
         plt.close(figure)
+
+
+def test_a_marker_occupies_the_disc_of_its_radius() -> None:
+    size = 100.0
+    figure = Figure(figsize=(size / 72.0, size / 72.0), dpi=72.0)
+    FigureCanvasAgg(figure)
+    axis = figure.add_axes((0.0, 0.0, 1.0, 1.0))
+    axis.set_xlim(0.0, size)
+    axis.set_ylim(0.0, size)
+    radius = 10.0
+    axis.plot([50.0], [50.0], marker="o", markersize=2.0 * radius, linestyle="none")
+    figure.canvas.draw()
+
+    grid = _occupancy_grid(_axes_ink(axis), width=size, height=size)
+
+    occupied = {(int(column), int(row)) for column, row in grid.ink_cells}
+    cells = int(size / CELL_PT)
+
+    for column in range(cells):
+        for row in range(cells):
+            distance = math.hypot(
+                (column + 0.5) * CELL_PT - 50.0, (row + 0.5) * CELL_PT - 50.0
+            )
+
+            if distance <= radius - CELL_PT:
+                assert (column, row) in occupied, (column, row)
+
+            if distance > 1.1 * radius + CELL_PT:
+                assert (column, row) not in occupied, (column, row)

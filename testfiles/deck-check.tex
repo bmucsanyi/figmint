@@ -1,0 +1,21 @@
+\documentclass[10pt,aspectratio=169,notheorems]{beamer}
+\usetheme[palette = latte]{slidemint}
+\usepackage{macromint}
+\usepackage{figmint}
+\figmintdirectory{build/deck-figures/}
+
+\begin{document}
+
+\begin{frame}{Figures}
+  \begin{columns}
+    \begin{column}{0.55\textwidth}
+      \typeout{FIGMINT_TEST name=column;linewidth=\the\linewidth}
+      \figmintgraphic{first}
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \figmintgraphic<2>[height to width ratio=0.5]{second}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\end{document}

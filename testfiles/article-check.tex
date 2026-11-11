@@ -1,0 +1,23 @@
+\documentclass{article}
+\usepackage{times}
+\usepackage{figmint}
+\figmintdirectory{build/article-figures/}
+\figmintpreamble{\usepackage{amsmath}}
+
+\begin{document}
+
+\typeout{FIGMINT_TEST name=article;linewidth=\the\linewidth}
+
+\begin{figure}
+  \centering
+  \figmintgraphic{first}
+  \caption{First.}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \figmintgraphic[width fraction=0.5, height to width ratio=0.5]{second}
+  \caption{Second.}
+\end{figure}
+
+\end{document}

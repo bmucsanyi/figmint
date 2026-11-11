@@ -4,11 +4,13 @@ import re
 import subprocess  # noqa: S404  # the test asks git for the commit the module must record
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import pytest
+from matplotlib.backends.backend_agg import FigureCanvasAgg
+from matplotlib.figure import Figure
 from PIL import Image
 
 from figmint import provenance, savefig
+from figmint._provenance import tex_escape
 
 REPO = Path(__file__).resolve().parents[1]
 
@@ -22,30 +24,35 @@ def head_commit() -> str:
     ).stdout.strip()
 
 
-def test_pdf_carries_commit_and_results(tmp_path: Path) -> None:
-    figure, axis = plt.subplots()
+def new_figure() -> Figure:
+    figure = Figure()
+    FigureCanvasAgg(figure)
+    axis = figure.subplots()
     axis.plot([0.0, 1.0], [0.0, 1.0])
+
+    return figure
+
+
+def test_pdf_carries_commit_and_results(tmp_path: Path) -> None:
     out = tmp_path / "figure.pdf"
 
-    savefig(figure, out, results="results/run-1", repo=REPO)
-    plt.close(figure)
+    savefig(new_figure(), out, results="results/run-1", repo=REPO)
 
     match = re.search(rb"/Subject \(([^)]*)\)", out.read_bytes())
     assert match is not None
     subject = match.group(1).decode()
-    assert subject.startswith("repo=figmint ")
-    assert f"commit={head_commit()}" in subject
-    assert re.search(r"dirty=(yes|no)", subject) is not None
-    assert subject.endswith(" results=results/run-1")
+    # The script field names the running script when it is inside the repository,
+    # which pytest's own entry point is.
+    assert re.fullmatch(
+        rf"repo=figmint commit={head_commit()}( script=\S+)? results=results/run-1",
+        subject,
+    )
 
 
 def test_png_carries_the_same_subject(tmp_path: Path) -> None:
-    figure, axis = plt.subplots()
-    axis.plot([0.0, 1.0], [1.0, 0.0])
     out = tmp_path / "figure.png"
 
-    savefig(figure, out, results="results/run-2", repo=REPO)
-    plt.close(figure)
+    savefig(new_figure(), out, results="results/run-2", repo=REPO)
 
     with Image.open(out) as image:
         subject = image.info["Subject"]
@@ -63,3 +70,9 @@ def test_results_are_optional() -> None:
 def test_outside_a_repository_fails_loudly(tmp_path: Path) -> None:
     with pytest.raises(RuntimeError, match="rev-parse"):
         provenance(repo=tmp_path)
+
+
+def test_tex_escape_covers_the_special_characters() -> None:
+    assert tex_escape("a_b%c#d&e$f{g}h~i^j\\k") == (
+        r"a\_b\%c\#d\&e\$f\{g\}h\textasciitilde{}i\textasciicircum{}j\textbackslash{}k"
+    )
