@@ -2,27 +2,14 @@
 
 import subprocess  # noqa: S404  # fixed git subcommands on a path this module chose
 import sys
+from io import BytesIO
 from os import PathLike
 from pathlib import Path
 
-from matplotlib.backends.backend_pgf import FigureCanvasPgf
 from matplotlib.figure import Figure
+from pypdf import PdfWriter
 
 from figmint._ticks import format_ticks
-
-# TeX's special characters and how hyperref reads them back into a PDF string.
-TEX_SPECIALS = {
-    "\\": r"\textbackslash{}",
-    "{": r"\{",
-    "}": r"\}",
-    "$": r"\$",
-    "&": r"\&",
-    "#": r"\#",
-    "^": r"\textasciicircum{}",
-    "_": r"\_",
-    "%": r"\%",
-    "~": r"\textasciitilde{}",
-}
 
 
 def savefig(
@@ -57,20 +44,30 @@ def savefig(
 def save(figure: Figure, path: str | PathLike[str], metadata: dict[str, str]) -> None:
     """Format the tick numbers and save the figure with the metadata.
 
-    The pgf backend typesets metadata, so its TeX special characters are
-    escaped for that canvas.
+    The metadata of a PDF is written into its information dictionary after
+    the save, so that it arrives as given: the pgf backend would typeset it as
+    LaTeX, which drops an underscore and refuses a backslash or a bracket.
     """
     format_ticks(figure)
 
-    if isinstance(figure.canvas, FigureCanvasPgf):
-        metadata = {key: tex_escape(value) for key, value in metadata.items()}
+    if Path(path).suffix.lower() == ".pdf":
+        figure.savefig(path)
+        write_pdf_metadata(path, metadata)
+    else:
+        figure.savefig(path, metadata=metadata)
 
-    figure.savefig(path, metadata=metadata)
 
+def write_pdf_metadata(path: str | PathLike[str], metadata: dict[str, str]) -> None:
+    """Set entries of the information dictionary of a PDF.
 
-def tex_escape(text: str) -> str:
-    """Return the text with TeX's special characters escaped."""
-    return "".join(TEX_SPECIALS.get(character, character) for character in text)
+    The entries go into an incremental update appended to the file, so the
+    bytes the engine wrote, its header included, stay as they are.
+    """
+    writer = PdfWriter(fileobj=str(path), incremental=True)
+    writer.add_metadata({f"/{key}": value for key, value in metadata.items()})
+    update = BytesIO()
+    writer.write(update)
+    Path(path).write_bytes(update.getvalue())
 
 
 def provenance(

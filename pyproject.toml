@@ -20,14 +20,14 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Operating System :: OS Independent",
 ]
-dependencies = ["matplotlib", "numpy", "pdfminer.six", "pillow"]
-version = "0.2.0"
+dependencies = ["matplotlib", "numpy", "pypdf"]
+version = "0.2.1"
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.12"
 
 [project.optional-dependencies]
-dev = ["ruff", "pre-commit", "pytest", "ty", "pytest-cov"]
+dev = ["ruff", "pre-commit", "pytest", "ty", "pytest-cov", "pdfminer.six", "pillow"]
 
 # PEP 518 Build System Configuration
 # See https://peps.python.org/pep-0518/

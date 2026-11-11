@@ -7,10 +7,12 @@ from pathlib import Path
 import pytest
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.figure import Figure
+from pdfminer.pdfdocument import PDFDocument
+from pdfminer.pdfparser import PDFParser
+from pdfminer.utils import decode_text
 from PIL import Image
 
 from figmint import provenance, savefig
-from figmint._provenance import tex_escape
 
 REPO = Path(__file__).resolve().parents[1]
 
@@ -33,19 +35,26 @@ def new_figure() -> Figure:
     return figure
 
 
+def subject_of(pdf: Path) -> str:
+    """Read the Subject of a PDF with pdfminer, independently of the writer.
+
+    Returns:
+        The Subject entry of the information dictionary.
+    """
+    with pdf.open("rb") as handle:
+        return decode_text(PDFDocument(PDFParser(handle)).info[0]["Subject"])
+
+
 def test_pdf_carries_commit_and_results(tmp_path: Path) -> None:
     out = tmp_path / "figure.pdf"
 
     savefig(new_figure(), out, results="results/run-1", repo=REPO)
 
-    match = re.search(rb"/Subject \(([^)]*)\)", out.read_bytes())
-    assert match is not None
-    subject = match.group(1).decode()
     # The script field names the running script when it is inside the repository,
     # which pytest's own entry point is.
     assert re.fullmatch(
         rf"repo=figmint commit={head_commit()}( script=\S+)? results=results/run-1",
-        subject,
+        subject_of(out),
     )
 
 
@@ -70,9 +79,3 @@ def test_results_are_optional() -> None:
 def test_outside_a_repository_fails_loudly(tmp_path: Path) -> None:
     with pytest.raises(RuntimeError, match="rev-parse"):
         provenance(repo=tmp_path)
-
-
-def test_tex_escape_covers_the_special_characters() -> None:
-    assert tex_escape("a_b%c#d&e$f{g}h~i^j\\k") == (
-        r"a\_b\%c\#d\&e\$f\{g\}h\textasciitilde{}i\textasciicircum{}j\textbackslash{}k"
-    )

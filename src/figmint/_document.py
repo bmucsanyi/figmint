@@ -16,9 +16,7 @@ from typing import Any
 import matplotlib as mpl
 from matplotlib.backends.backend_pgf import FigureCanvasPgf
 from matplotlib.figure import Figure
-from pdfminer.pdfdocument import PDFDocument
-from pdfminer.pdfparser import PDFParser
-from pdfminer.utils import decode_text
+from pypdf import PdfReader
 
 from figmint._provenance import provenance, save
 from figmint._style import font_sizes, look
@@ -251,13 +249,12 @@ class Document:
         if not pdf.exists():
             return None
 
-        with pdf.open("rb") as handle:
-            info = PDFDocument(PDFParser(handle)).info
+        info = PdfReader(pdf).metadata
 
-        if not info or "Keywords" not in info[0]:
+        if info is None or "/Keywords" not in info:
             return None
 
-        return decode_text(info[0]["Keywords"])
+        return str(info["/Keywords"])
 
     def _probe(self, line: Line) -> None:
         """Compile the preamble as matplotlib will and compare the fonts it gives.
